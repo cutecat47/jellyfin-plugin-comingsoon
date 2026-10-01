@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.4.1.0",
+        "changelog": "Also draws the status and progress bar onto a 16:9 thumbnail, so Moonfin home rows set to Thumbnail show progress too (posters already did). Existing placeholders are redrawn once after updating.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/cutecat47/jellyfin-plugin-comingsoon/releases/download/v0.4.1.0/comingsoon_0.4.1.0.zip",
+        "checksum": "7c13f9087f772072cbd2eb6c3da50453",
+        "timestamp": "2026-10-01T10:52:49.0000000Z"
+      },
+      {
         "version": "0.4.0.0",
         "changelog": "Posters now show progress: status, percentage, a progress bar and a detail line drawn onto each placeholder poster (title card when there is no artwork), redrawn as the status changes. Existing placeholders are redrawn once after updating.",
         "targetAbi": "12.1.0.0",
