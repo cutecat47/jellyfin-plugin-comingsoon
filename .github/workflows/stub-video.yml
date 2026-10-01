@@ -1,0 +1,52 @@
+# One-off: (re)generates the bundled placeholder video with ffmpeg and commits it.
+# Run from the Actions tab (or `gh workflow run stub-video.yml`) only when the video should change.
+name: Generate stub video
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg and fonts
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Render
+        run: |
+          OUT=src/Jellyfin.Plugin.ComingSoon/Resources/stub.mp4
+          mkdir -p "$(dirname "$OUT")"
+          BOLD=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+          REG=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+          ffmpeg -y -hide_banner \
+            -f lavfi -i "color=c=black:s=640x360:r=24:d=4" \
+            -f lavfi -i "anullsrc=r=48000:cl=stereo" \
+            -vf "drawtext=fontfile=${BOLD}:text='Still downloading':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2-22,drawtext=fontfile=${REG}:text='This title is coming soon':fontcolor=0xB0B0B0:fontsize=22:x=(w-text_w)/2:y=(h/2)+26" \
+            -t 4 -map 0:v -map 1:a \
+            -c:v libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -tune stillimage -crf 32 -g 96 \
+            -c:a aac -b:a 32k \
+            -map_metadata -1 -metadata title= \
+            -movflags +faststart "$OUT"
+          ffprobe -hide_banner -show_entries format=duration,size:stream=codec_name,width,height,pix_fmt,profile "$OUT"
+          ffmpeg -hide_banner -ss 2 -i "$OUT" -frames:v 1 stub-frame.png
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stub-preview
+          path: |
+            stub-frame.png
+            src/Jellyfin.Plugin.ComingSoon/Resources/stub.mp4
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/Jellyfin.Plugin.ComingSoon/Resources/stub.mp4
+          git diff --cached --quiet && echo "unchanged" && exit 0
+          git commit -m "Generate bundled stub video"
+          git push
