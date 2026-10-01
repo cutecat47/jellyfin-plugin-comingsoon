@@ -1,6 +1,6 @@
 {
   "category": "General",
-  "changelog": "Also draws the status and progress bar onto a 16:9 thumbnail, so Moonfin home rows set to Thumbnail show progress too (posters already did). Existing placeholders are redrawn once after updating.",
+  "changelog": "Fix: placeholder names showed as cs-tv-… in Moonfin/web. Titles and status are now also written to an NFO next to each placeholder (Jellyfin re-reads it on every scan) and to the item instance Jellyfin serves; NFO reading is turned on for the Coming Soon library. The plugin now creates its library only once and warns if several libraries use the stub folder.",
   "description": "Keeps a shared \"Coming Soon\" library of requested movies and shows that haven't arrived yet, with download progress and ETA in the item overview. Placeholder items are not playable.",
   "guid": "41434daf-8948-4e30-b7b9-cbeb0ff0ea32",
   "name": "Coming Soon",
@@ -8,7 +8,7 @@
   "owner": "cutecat47",
   "targetAbi": "12.1.0.0",
   "timestamp": "2026-10-01T00:00:00.0000000Z",
-  "version": "0.4.1.0",
+  "version": "0.4.2.0",
   "status": "Active",
   "autoUpdate": false,
   "assemblies": []

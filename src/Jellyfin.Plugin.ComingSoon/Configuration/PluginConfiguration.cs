@@ -32,4 +32,10 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets the name used when the plugin creates the library (an existing library on the stub folder is used as-is).</summary>
     public string LibraryName { get; set; } = "Coming Soon";
+
+    /// <summary>
+    /// Gets or sets the stub folder the plugin has already created a library for. The plugin never creates a
+    /// second one for the same folder; clear this to allow it again.
+    /// </summary>
+    public string LibraryCreatedFor { get; set; } = string.Empty;
 }

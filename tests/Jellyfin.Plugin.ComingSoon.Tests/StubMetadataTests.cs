@@ -50,6 +50,31 @@ public class StubMetadataTests
     }
 
     [Fact]
+    public void Nfo_HasTitleStatusAndLocks_ButNoIds()
+    {
+        var entry = Entry("Fast & Furious <11>", new DateTimeOffset(2026, 9, 28, 10, 13, 55, TimeSpan.Zero)) with { TmdbId = 385687, TvdbId = 1 };
+
+        var nfo = StubMetadata.ToNfo(entry, Downloading, "Downloading — 60% — a few hours left");
+        var doc = System.Xml.Linq.XDocument.Parse(nfo);
+        var movie = doc.Root!;
+
+        Assert.Equal("movie", movie.Name.LocalName);
+        Assert.Equal("Fast & Furious <11>", movie.Element("title")!.Value);
+        Assert.Equal(StubMetadata.SortName(entry), movie.Element("sorttitle")!.Value);
+        Assert.Equal("Downloading — 60% — a few hours left", movie.Element("plot")!.Value);
+        Assert.Equal("Downloading 60%", movie.Element("tagline")!.Value);
+        Assert.Equal("2026", movie.Element("year")!.Value);
+        Assert.Equal("2026-09-28 10:13:55", movie.Element("dateadded")!.Value);
+        Assert.Equal("true", movie.Element("lockdata")!.Value);
+        Assert.Contains("Name", movie.Element("lockedfields")!.Value.Split('|'));
+        Assert.Equal("Coming Soon", movie.Element("tag")!.Value);
+
+        // Seerr matches Jellyfin items by provider id; a stub must never carry one.
+        Assert.DoesNotContain("385687", nfo, StringComparison.Ordinal);
+        Assert.DoesNotMatch("uniqueid|tmdb|tvdb|imdb", nfo);
+    }
+
+    [Fact]
     public void SortName_PutsNewestRequestFirst_UnderNameSort()
     {
         var older = StubMetadata.SortName(Entry("Aardvark", new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero)));

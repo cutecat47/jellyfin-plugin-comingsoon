@@ -147,12 +147,39 @@ public sealed class ComingSoonLibrary(
     public async Task<LibraryState> EnsureLibraryAsync(string root, string name, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(root);
-        var folder = FindVirtualFolder(root);
+        var onRoot = FindVirtualFolders(root);
+        if (onRoot.Count > 1)
+        {
+            logger.LogWarning(
+                "[ComingSoon] {Count} libraries use the stub folder {Root:l} ({Names:l}); items will show twice. Delete all but one in Dashboard -> Libraries",
+                onRoot.Count,
+                root,
+                string.Join(", ", onRoot.Select(f => "'" + f.Name + "'")));
+        }
+
+        var folder = onRoot.FirstOrDefault();
         var created = false;
 
         if (folder is null)
         {
-            logger.LogInformation("[ComingSoon] Creating library '{Name:l}' on {Root:l}", name, root);
+            var config = Plugin.Instance?.Configuration;
+            if (config is not null && string.Equals(config.LibraryCreatedFor, root, StringComparison.Ordinal))
+            {
+                // Created once already: never create duplicates. The library was deleted or moved by hand.
+                if (_warnedAbout != "missing")
+                {
+                    logger.LogWarning(
+                        "[ComingSoon] No library uses the stub folder {Root:l} any more (libraries: {Libraries:l}). Add {Root2:l} to a Movies library, or clear 'Library created' in the plugin settings to let the plugin create one again",
+                        root,
+                        DescribeLibraries(),
+                        root);
+                    _warnedAbout = "missing";
+                }
+
+                return LibraryState.Unavailable;
+            }
+
+            logger.LogInformation("[ComingSoon] Creating library '{Name:l}' on {Root:l} (existing libraries: {Libraries:l})", name, root, DescribeLibraries());
             try
             {
                 await libraryManager.AddVirtualFolder(name, CollectionTypeOptions.movies, NewLibraryOptions(root), refreshLibrary: false).ConfigureAwait(false);
@@ -163,16 +190,23 @@ public sealed class ComingSoonLibrary(
                 return LibraryState.Unavailable;
             }
 
-            folder = FindVirtualFolder(root);
+            folder = FindVirtualFolders(root).FirstOrDefault();
             created = true;
             if (folder is null)
             {
                 logger.LogError("[ComingSoon] Library was created but can't be found on {Root:l}", root);
                 return LibraryState.Unavailable;
             }
+
+            if (config is not null)
+            {
+                config.LibraryCreatedFor = root;
+                Plugin.Instance!.SaveConfiguration();
+            }
         }
 
         _libraryId = Guid.TryParse(folder.ItemId, out var id) ? id : Guid.Empty;
+        EnableNfoReader(folder);
         WarnAboutSettings(folder);
         return _libraryId == Guid.Empty ? LibraryState.Unavailable : created ? LibraryState.Created : LibraryState.Existing;
     }
@@ -234,12 +268,14 @@ public sealed class ComingSoonLibrary(
 
     public async Task<StubRecord?> ApplyAsync(string mediaPath, StubRecord record, DisplayState state, CancellationToken cancellationToken)
     {
-        var item = libraryManager.FindByPath(mediaPath, isFolder: false);
-        if (item is null)
+        var found = libraryManager.FindByPath(mediaPath, isFolder: false);
+        if (found is null)
         {
             return null;
         }
 
+        // FindByPath returns a fresh copy from the database; edit the instance Jellyfin serves to clients.
+        var item = libraryManager.GetItemById(found.Id) ?? found;
         var entry = record.Entry;
         var (poster, backdrop) = await SaveArtworkAsync(item, mediaPath, record, state, cancellationToken).ConfigureAwait(false);
 
@@ -308,14 +344,51 @@ public sealed class ComingSoonLibrary(
                 ImageFetcherOrder = [],
             },
         ],
-        DisabledLocalMetadataReaders = ["Nfo"],
+
+        // Local NFO stays enabled: the plugin writes one per stub (no ids in it) so scans keep its title/status.
     };
 
-    private VirtualFolderInfo? FindVirtualFolder(string root)
+    private List<VirtualFolderInfo> FindVirtualFolders(string root)
     {
-        var full = Path.GetFullPath(root).TrimEnd('/', '\\');
-        return libraryManager.GetVirtualFolders().FirstOrDefault(f =>
-            f.Locations.Any(l => string.Equals(Path.GetFullPath(l).TrimEnd('/', '\\'), full, StringComparison.Ordinal)));
+        var full = Normalize(root);
+        return libraryManager.GetVirtualFolders()
+            .Where(f => (f.Locations ?? []).Any(l => string.Equals(Normalize(l), full, StringComparison.Ordinal)))
+            .ToList();
+    }
+
+    private string DescribeLibraries()
+        => string.Join("; ", libraryManager.GetVirtualFolders().Select(f => $"'{f.Name}' = {string.Join(", ", f.Locations ?? [])}"));
+
+    private static string Normalize(string path)
+    {
+        try
+        {
+            return Path.GetFullPath(path).TrimEnd('/', '\\');
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return path.TrimEnd('/', '\\');
+        }
+    }
+
+    /// <summary>Libraries created by 0.3.x-0.4.1 had NFO reading off; the stub NFOs need it on.</summary>
+    private void EnableNfoReader(VirtualFolderInfo folder)
+    {
+        if (libraryManager.GetItemById(_libraryId) is not CollectionFolder collection)
+        {
+            return;
+        }
+
+        var options = collection.GetLibraryOptions();
+        var disabled = options.DisabledLocalMetadataReaders ?? [];
+        if (!disabled.Contains("Nfo", StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        options.DisabledLocalMetadataReaders = disabled.Where(r => !string.Equals(r, "Nfo", StringComparison.OrdinalIgnoreCase)).ToArray();
+        collection.UpdateLibraryOptions(options);
+        logger.LogInformation("[ComingSoon] Turned on NFO metadata for library '{Name:l}' (placeholder titles are stored in NFO files)", folder.Name);
     }
 
     private void WarnAboutSettings(VirtualFolderInfo folder)

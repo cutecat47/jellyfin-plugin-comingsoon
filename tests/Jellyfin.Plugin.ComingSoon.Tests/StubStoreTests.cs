@@ -105,6 +105,20 @@ public sealed class StubStoreTests : IDisposable
     }
 
     [Fact]
+    public void WriteNfo_NextToVideo_OnlyWhenChanged()
+    {
+        var store = new StubStore(_root, () => Video);
+        store.EnsureStub("movie-tmdb3");
+
+        Assert.True(store.WriteNfo("movie-tmdb3", "<movie>a</movie>"));
+        Assert.False(store.WriteNfo("movie-tmdb3", "<movie>a</movie>"));
+        Assert.True(store.WriteNfo("movie-tmdb3", "<movie>b</movie>"));
+        Assert.Equal(Path.Combine(store.FolderFor("movie-tmdb3"), "cs-movie-3.nfo"), store.NfoPathFor("movie-tmdb3"));
+        Assert.Equal("<movie>b</movie>", File.ReadAllText(store.NfoPathFor("movie-tmdb3")));
+        Assert.False(File.Exists(Path.Combine(store.FolderFor("movie-tmdb3"), ".nfo.tmp")));
+    }
+
+    [Fact]
     public void Delete_RemovesFolder()
     {
         var store = new StubStore(_root, () => Video);

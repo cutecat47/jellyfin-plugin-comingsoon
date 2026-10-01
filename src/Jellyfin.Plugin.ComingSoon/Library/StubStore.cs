@@ -11,8 +11,8 @@ namespace Jellyfin.Plugin.ComingSoon.Library;
 /// <summary>What was last written for a stub; stored next to it so restarts pick up where they left off.</summary>
 public sealed record StubRecord
 {
-    /// <summary>Bump to make every existing stub re-render after an upgrade (2 = poster overlay, 3 = + 16:9 thumbnail).</summary>
-    public const int CurrentSchema = 3;
+    /// <summary>Bump to make every existing stub re-render after an upgrade (2 = poster overlay, 3 = + 16:9 thumbnail, 4 = + NFO).</summary>
+    public const int CurrentSchema = 4;
 
     public int SchemaVersion { get; init; } = CurrentSchema;
 
@@ -83,6 +83,25 @@ public sealed partial class StubStore
 
         Directory.CreateDirectory(FolderFor(key));
         File.WriteAllBytes(media, _video());
+        return true;
+    }
+
+    /// <summary>The NFO Jellyfin reads for the stub video (same name, .nfo extension).</summary>
+    public string NfoPathFor(string key) => Path.ChangeExtension(MediaPathFor(key), ".nfo");
+
+    /// <summary>Writes the NFO if its content changed. Returns true when the file was written.</summary>
+    public bool WriteNfo(string key, string nfo)
+    {
+        var path = NfoPathFor(key);
+        if (File.Exists(path) && string.Equals(File.ReadAllText(path), nfo, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        Directory.CreateDirectory(FolderFor(key));
+        var temp = Path.Combine(FolderFor(key), ".nfo.tmp");
+        File.WriteAllText(temp, nfo);
+        File.Move(temp, path, overwrite: true);
         return true;
     }
 

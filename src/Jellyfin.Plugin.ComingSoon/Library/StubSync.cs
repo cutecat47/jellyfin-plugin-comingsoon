@@ -185,6 +185,7 @@ public sealed class StubSync
                     AppliedBackdropUrl = previous?.AppliedBackdropUrl,
                 };
                 _store.Save(record);
+                _store.WriteNfo(key, StubMetadata.ToNfo(entry, state, record.Overview ?? StatusText.Overview(state)));
                 _records[key] = record;
                 _pending.TryAdd(key, now);
             }
@@ -220,6 +221,7 @@ public sealed class StubSync
             var state = StatusText.ToDisplayState(record.Entry, config.PercentStep, now, _time.LocalTimeZone);
             try
             {
+                _store.WriteNfo(key, StubMetadata.ToNfo(record.Entry, state, record.Overview ?? StatusText.Overview(state)));
                 var applied = await _library.ApplyAsync(_store.MediaPathFor(key), record, state, cancellationToken).ConfigureAwait(false);
                 if (applied is null)
                 {

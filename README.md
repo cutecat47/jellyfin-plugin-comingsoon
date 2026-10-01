@@ -76,7 +76,8 @@ would wrongly mark requests as available. Optionally, also untick the Coming Soo
   the air date); grabs with no usable files (e.g. a rejected `.exe` — the item shows *Searching* and
   the log tells you to blocklist it).
 - **Library items**: one folder per item in the stub folder (`cs-movie-687163/`, `cs-tv-371980-s02/`)
-  holding a 9.5 KB 4-second video (black, "Still downloading") and a hidden `.comingsoon.json`
+  holding a 9.5 KB 4-second video (black, "Still downloading"), an `.nfo` with the title and status
+  (Jellyfin re-reads it on every scan, so titles never revert to the folder name) and a hidden `.comingsoon.json`
   recording what was last written, so restarts never duplicate anything. Metadata written through
   Jellyfin's item APIs with **every field locked**: Name = title, Overview = status line,
   Tagline = short status, poster/backdrop from TMDB (via Seerr) or Sonarr/Radarr, Date added = request
@@ -118,6 +119,8 @@ and for this library that row *is* a "currently downloading" row — newest requ
 progress posters. To make it look like a dedicated row rather than a collection:
 
 1. **Rename the library** (Dashboard → Libraries → ⋮ → Rename) to e.g. **Currently Downloading**.
+   The plugin creates the library only once (it remembers this in its settings) and never creates a
+   second one for the same folder.
    The plugin finds it by folder, so renaming is safe. The row then reads
    *Recently Added in Currently Downloading* (wording varies by app).
 2. **Hide the library tile** for each user: Settings → Home → *My Media* — untick the library under

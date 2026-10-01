@@ -113,6 +113,11 @@ public sealed class StubSyncTests : IDisposable
         Assert.Equal(2, _library.Scans); // once when the library was found, once after creating stubs
         Assert.Equal(11, _library.Applied.Count);
         Assert.All(new StubStore(_root, () => Video).LoadAll(), r => Assert.True(r.MetadataApplied));
+
+        // Each stub has an NFO with the real title, so library scans never show the folder name.
+        var nfo = File.ReadAllText(Path.Combine(_root, "cs-tv-371980-s02", "cs-tv-371980-s02.nfo"));
+        Assert.Contains("<title>Severance - Season 2</title>", nfo, StringComparison.Ordinal);
+        Assert.Contains("<plot>Downloading — 40% — under an hour left (4 episodes)</plot>", nfo, StringComparison.Ordinal);
     }
 
     [Fact]
