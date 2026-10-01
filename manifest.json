@@ -6,6 +6,15 @@
     "overview": "Download progress library for Seerr, Sonarr and Radarr",
     "owner": "cutecat47",
     "category": "General",
-    "versions": []
+    "versions": [
+      {
+        "version": "0.2.2.0",
+        "changelog": "Tracks Radarr/Sonarr queues and Seerr requests and logs Coming Soon items. Unaired or fake grabs show as Waiting for release / Searching. Working Test connections. Library stubs not yet written.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/cutecat47/jellyfin-plugin-comingsoon/releases/download/v0.2.2.0/comingsoon_0.2.2.0.zip",
+        "checksum": "4a7108e3debb3da1f0e753629d7a872c",
+        "timestamp": "2026-10-01T10:10:16.0000000Z"
+      }
+    ]
   }
 ]
