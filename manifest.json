@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.3.1.0",
+        "changelog": "Fix: placeholders never appeared in the Coming Soon library. The plugin now scans the library the same way Jellyfin's own Scan library does (its folder items, not the collection folder, whose scan is a no-op), and rescans every 2 minutes while anything is still waiting to be indexed.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/cutecat47/jellyfin-plugin-comingsoon/releases/download/v0.3.1.0/comingsoon_0.3.1.0.zip",
+        "checksum": "d1a034a72b36f5830a457022aba6872a",
+        "timestamp": "2026-10-01T10:38:43.0000000Z"
+      },
+      {
         "version": "0.3.0.0",
         "changelog": "Library phase: creates the Coming Soon library and one placeholder per movie/season with poster, status, progress and ETA (locked metadata, newest first). Playback of placeholders is refused (PlaybackInfo) with a Stop + message fallback; watch state cleared. Stubs removed when the real item arrives. Restart-safe.",
         "targetAbi": "12.1.0.0",
