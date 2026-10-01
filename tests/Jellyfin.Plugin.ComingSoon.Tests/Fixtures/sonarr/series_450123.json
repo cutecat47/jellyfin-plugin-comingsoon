@@ -1,0 +1,17 @@
+[
+  {
+    "title": "The Example Files",
+    "status": "continuing",
+    "seasons": [
+      {
+        "seasonNumber": 1,
+        "monitored": true,
+        "statistics": { "previousAiring": "2026-07-23T01:00:00Z", "episodeFileCount": 3, "episodeCount": 8, "totalEpisodeCount": 8, "sizeOnDisk": 6442450944, "releaseGroups": [ "GROUP" ], "percentOfEpisodes": 37.5 }
+      }
+    ],
+    "year": 2026,
+    "tvdbId": 450123,
+    "tmdbId": 250001,
+    "id": 88
+  }
+]

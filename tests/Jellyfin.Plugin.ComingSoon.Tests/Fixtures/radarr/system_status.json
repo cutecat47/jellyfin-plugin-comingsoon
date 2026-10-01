@@ -1,0 +1,19 @@
+{
+  "appName": "Radarr",
+  "instanceName": "Radarr",
+  "version": "5.28.0.10274",
+  "buildTime": "2025-10-10T10:00:00Z",
+  "isDebug": false,
+  "isProduction": true,
+  "isAdmin": false,
+  "isUserInteractive": false,
+  "startupPath": "/app/radarr/bin",
+  "appData": "/config",
+  "osName": "ubuntu",
+  "isDocker": true,
+  "branch": "master",
+  "authentication": "forms",
+  "urlBase": "",
+  "runtimeVersion": "8.0.12",
+  "databaseType": "sqLite"
+}

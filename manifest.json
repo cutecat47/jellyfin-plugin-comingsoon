@@ -1,0 +1,11 @@
+[
+  {
+    "guid": "41434daf-8948-4e30-b7b9-cbeb0ff0ea32",
+    "name": "Coming Soon",
+    "description": "Keeps a shared \"Coming Soon\" library of requested movies and shows that haven't arrived yet, with download progress and ETA in the item overview. Placeholder items are not playable.",
+    "overview": "Download progress library for Seerr, Sonarr and Radarr",
+    "owner": "cutecat47",
+    "category": "General",
+    "versions": []
+  }
+]

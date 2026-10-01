@@ -1,0 +1,71 @@
+# Push a tag like v0.2.2.0 to build, test, publish a GitHub Release and add the version to
+# manifest.json, which Jellyfin reads as a plugin repository.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Check versions match the tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PROPS=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props)
+          META=$(jq -r .version meta.json)
+          if [ "$VERSION" != "$PROPS" ] || [ "$VERSION" != "$META" ]; then
+            echo "::error::Tag $VERSION, Directory.Build.props $PROPS and meta.json $META must all match"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Build and test
+        run: dotnet test -c Release
+
+      - name: Package
+        run: |
+          DIR="artifacts/ComingSoon_${VERSION}"
+          TS=$(date -u +%Y-%m-%dT%H:%M:%S.0000000Z)
+          jq --arg ts "$TS" '.timestamp = $ts' "$DIR/meta.json" > meta.tmp && mv meta.tmp "$DIR/meta.json"
+          ZIP="comingsoon_${VERSION}.zip"
+          (cd "$DIR" && zip -X "../../${ZIP}" ./*)
+          unzip -l "$ZIP"
+          {
+            echo "ZIP=$ZIP"
+            echo "TS=$TS"
+            echo "MD5=$(md5sum "$ZIP" | cut -d' ' -f1)"
+          } >> "$GITHUB_ENV"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$ZIP" --title "Coming Soon $VERSION" --notes "$(jq -r .changelog meta.json)"
+
+      - name: Add version to manifest.json
+        run: |
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${ZIP}"
+          CHANGELOG=$(jq -r .changelog meta.json)
+          ABI=$(jq -r .targetAbi meta.json)
+          git checkout -B main origin/main
+          jq --arg v "$VERSION" --arg cl "$CHANGELOG" --arg abi "$ABI" --arg url "$URL" --arg md5 "$MD5" --arg ts "$TS" \
+            '.[0].versions = ([{version: $v, changelog: $cl, targetAbi: $abi, sourceUrl: $url, checksum: $md5, timestamp: $ts}]
+                              + [.[0].versions[] | select(.version != $v)])' manifest.json > manifest.tmp
+          mv manifest.tmp manifest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "Publish ${VERSION} to plugin manifest"
+          git push origin main

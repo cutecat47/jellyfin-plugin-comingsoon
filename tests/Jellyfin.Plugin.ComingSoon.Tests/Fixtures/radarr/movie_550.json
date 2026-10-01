@@ -1,0 +1,17 @@
+[
+  {
+    "title": "Fight Club",
+    "status": "released",
+    "inCinemas": "1999-10-15T00:00:00Z",
+    "physicalRelease": "2000-06-06T00:00:00Z",
+    "images": [],
+    "year": 1999,
+    "hasFile": false,
+    "monitored": true,
+    "minimumAvailability": "released",
+    "isAvailable": true,
+    "lastSearchTime": "2026-09-29T08:00:05Z",
+    "tmdbId": 550,
+    "id": 431
+  }
+]

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Coming Soon</title>
+</head>
+<body>
+    <div id="ComingSoonConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="ComingSoonConfigForm">
+                    <h2 class="sectionTitle">Seerr</h2>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="url" id="SeerrUrl" label="Seerr URL" placeholder="http://seerr:5055" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="password" id="SeerrApiKey" label="Seerr API key" autocomplete="off" />
+                    </div>
+
+                    <h2 class="sectionTitle">Sonarr</h2>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="url" id="SonarrUrl" label="Sonarr URL" placeholder="http://sonarr:8989" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="password" id="SonarrApiKey" label="Sonarr API key" autocomplete="off" />
+                    </div>
+
+                    <h2 class="sectionTitle">Radarr</h2>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="url" id="RadarrUrl" label="Radarr URL" placeholder="http://radarr:7878" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="password" id="RadarrApiKey" label="Radarr API key" autocomplete="off" />
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="button" id="TestConnections" class="raised block emby-button">
+                            <span>Test connections</span>
+                        </button>
+                        <div id="TestResults" style="margin: 0.5em 0 1.5em;"></div>
+                    </div>
+
+                    <h2 class="sectionTitle">Behaviour</h2>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="number" id="PollIntervalSeconds" min="1" max="3600" label="Poll interval (seconds)" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="text" id="StubFolderPath" label="Stub folder path" />
+                        <div class="fieldDescription">Point a library named "Coming Soon" at this folder.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="number" id="PercentStep" min="1" max="100" label="Progress step for updates (%)" />
+                        <div class="fieldDescription">Item metadata is only rewritten when progress crosses this step (and at most once per minute per item).</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="VerboseLogging" type="checkbox" is="emby-checkbox" />
+                            <span>Verbose logging</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="ShowNativeProgressBar" type="checkbox" is="emby-checkbox" />
+                            <span>Show native progress bar on stubs (experimental)</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                var pluginId = '41434daf-8948-4e30-b7b9-cbeb0ff0ea32';
+                var textFields = ['SeerrUrl', 'SeerrApiKey', 'SonarrUrl', 'SonarrApiKey', 'RadarrUrl', 'RadarrApiKey', 'StubFolderPath'];
+                var numberFields = ['PollIntervalSeconds', 'PercentStep'];
+                var boolFields = ['VerboseLogging', 'ShowNativeProgressBar'];
+                var page = document.querySelector('#ComingSoonConfigPage');
+
+                function el(id) { return page.querySelector('#' + id); }
+
+                function escapeHtml(s) {
+                    return String(s).replace(/[&<>"']/g, function (c) {
+                        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                    });
+                }
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        textFields.forEach(function (f) { el(f).value = config[f] || ''; });
+                        numberFields.forEach(function (f) { el(f).value = config[f]; });
+                        boolFields.forEach(function (f) { el(f).checked = !!config[f]; });
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                el('ComingSoonConfigForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        textFields.forEach(function (f) { config[f] = el(f).value.trim(); });
+                        numberFields.forEach(function (f) { config[f] = parseInt(el(f).value, 10) || config[f]; });
+                        boolFields.forEach(function (f) { config[f] = el(f).checked; });
+                        ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+                    return false;
+                });
+
+                el('TestConnections').addEventListener('click', function () {
+                    var body = {};
+                    ['SeerrUrl', 'SeerrApiKey', 'SonarrUrl', 'SonarrApiKey', 'RadarrUrl', 'RadarrApiKey']
+                        .forEach(function (f) { body[f] = el(f).value.trim(); });
+                    var out = el('TestResults');
+                    out.textContent = 'Testing…';
+                    ApiClient.ajax({
+                        type: 'POST',
+                        url: ApiClient.getUrl('ComingSoon/TestConnections'),
+                        data: JSON.stringify(body),
+                        contentType: 'application/json',
+                        dataType: 'json'
+                    }).then(function (results) {
+                        out.innerHTML = results.map(function (r) {
+                            var icon = r.Success || r.success ? '✔' : '✖';
+                            var color = r.Success || r.success ? '#52b54b' : '#cc3333';
+                            return '<div style="color:' + color + '">' + icon + ' <b>' + escapeHtml(r.Service || r.service) + '</b>: '
+                                + escapeHtml(r.Message || r.message) + '</div>';
+                        }).join('');
+                    }, function () {
+                        out.textContent = 'Request failed — check the Jellyfin log for [ComingSoon] errors.';
+                    });
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>

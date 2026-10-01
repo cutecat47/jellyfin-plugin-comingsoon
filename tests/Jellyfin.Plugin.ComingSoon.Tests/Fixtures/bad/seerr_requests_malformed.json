@@ -1,0 +1,11 @@
+{
+  "pageInfo": "nope",
+  "results": [
+    { "id": 1, "status": 2, "type": "movie", "media": null },
+    { "id": 2, "status": 2, "type": "tv", "media": { "tmdbId": 300 }, "seasons": [] },
+    { "id": 3, "status": 2, "type": "music", "media": { "tmdbId": 301 } },
+    { "id": 4, "status": 2, "media": { "tmdbId": 302, "mediaType": "movie", "status": "3" }, "createdAt": "yesterday" },
+    { "id": 5, "status": 2, "type": "tv", "media": { "tmdbId": 303, "tvdbId": "404" }, "seasons": [ { "seasonNumber": 1 }, { "seasonNumber": "2" }, { "seasonNumber": -1 }, { "nope": true }, { "seasonNumber": 1 } ] },
+    [ "array", "not", "object" ]
+  ]
+}

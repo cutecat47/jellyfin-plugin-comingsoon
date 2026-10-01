@@ -1,0 +1,16 @@
+{
+  "page": "one",
+  "totalRecords": "lots",
+  "records": [
+    "not an object",
+    42,
+    null,
+    { "movie": "should be an object", "size": 100, "id": 1 },
+    { "movie": { "title": "Bad Numbers", "tmdbId": "2001", "hasFile": "false" }, "size": "lots", "sizeleft": null, "timeleft": "not-a-time", "status": 7, "id": "x" },
+    { "movie": { "title": "Negative Left", "tmdbId": 2002 }, "size": 100, "sizeleft": -50, "timeleft": "-01:00:00", "status": "DOWNLOADING", "trackedDownloadState": "Downloading", "estimatedCompletionTime": "garbage", "added": 12345, "id": 3 },
+    { "movie": { "title": "More Left Than Size", "tmdbId": 2003 }, "size": 100, "sizeleft": 1000, "status": "downloading", "id": 4 },
+    { "movie": { "title": "Zero Id", "tmdbId": 0 }, "size": 100, "id": 5 },
+    { "movie": { "title": "Brand New Status", "tmdbId": 2004 }, "size": 100, "sizeleft": 40, "status": "someFutureStatus", "trackedDownloadState": "someFutureState", "statusMessages": "oops", "id": 6 },
+    { "movie": { "title": "Huge", "tmdbId": 2005 }, "size": 1e400, "sizeleft": 1e999, "status": "downloading", "id": 7 }
+  ]
+}

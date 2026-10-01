@@ -1,0 +1,9 @@
+{
+  "page": 1,
+  "pageSize": 2,
+  "totalRecords": 3,
+  "records": [
+    { "movie": { "title": "Paged One", "tmdbId": 1001, "hasFile": false }, "size": 100, "sizeleft": 50, "status": "downloading", "trackedDownloadState": "downloading", "trackedDownloadStatus": "ok", "downloadId": "p1", "id": 1 },
+    { "movie": { "title": "Paged Two", "tmdbId": 1002, "hasFile": false }, "size": 100, "sizeleft": 100, "status": "queued", "trackedDownloadState": "downloading", "trackedDownloadStatus": "ok", "downloadId": "p2", "id": 2 }
+  ]
+}

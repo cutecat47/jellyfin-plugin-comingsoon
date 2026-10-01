@@ -1,0 +1,72 @@
+{
+  "page": 1,
+  "pageSize": 200,
+  "totalRecords": 3,
+  "records": [
+    {
+      "seriesId": 91,
+      "episodeId": 12001,
+      "seasonNumber": 4,
+      "series": { "title": "Ted Lasso", "images": [], "year": 2020, "tvdbId": 383203, "tmdbId": 97546, "id": 91 },
+      "episode": { "seriesId": 91, "seasonNumber": 4, "episodeNumber": 1, "title": "TBA", "airDate": "2026-10-14", "airDateUtc": "2026-10-14T01:00:00Z", "hasFile": false, "id": 12001 },
+      "size": 2254857830,
+      "title": "Ted.Lasso.S04E01.1080p.WEB.H264-FAKE",
+      "added": "2026-10-01T08:12:00Z",
+      "status": "completed",
+      "trackedDownloadStatus": "warning",
+      "trackedDownloadState": "importPending",
+      "statusMessages": [
+        { "title": "One or more episodes expected in this release were not imported or missing from the release", "messages": [] },
+        { "title": "Ted.Lasso.S04E01.1080p.WEB.H264-FAKE.lnk", "messages": [ "Invalid video file, unsupported extension: '.lnk'" ] }
+      ],
+      "downloadId": "0F1E2D3C4B5A69788796A5B4C3D2E1F00A1B2C3D",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent",
+      "episodeHasFile": false,
+      "sizeleft": 0,
+      "timeleft": "00:00:00",
+      "id": 2101000001
+    },
+    {
+      "seriesId": 95,
+      "episodeId": 13005,
+      "seasonNumber": 1,
+      "series": { "title": "Lanterns", "images": [], "year": 2026, "tvdbId": 376098, "tmdbId": 202555, "id": 95 },
+      "episode": { "seriesId": 95, "seasonNumber": 1, "episodeNumber": 5, "title": "TBA", "airDateUtc": "2026-10-06T01:00:00Z", "hasFile": false, "id": 13005 },
+      "size": 0,
+      "title": "Lanterns.S01E05.1080p.WEB.h264-FAKE",
+      "added": "2026-10-01T07:40:00Z",
+      "status": "completed",
+      "trackedDownloadStatus": "ok",
+      "trackedDownloadState": "importPending",
+      "statusMessages": [],
+      "downloadId": "1A2B3C4D5E6F708192A3B4C5D6E7F8091A2B3C4D",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent",
+      "episodeHasFile": false,
+      "sizeleft": 0,
+      "id": 2101000002
+    },
+    {
+      "seriesId": 95,
+      "episodeId": 13004,
+      "seasonNumber": 1,
+      "series": { "title": "Lanterns", "images": [], "year": 2026, "tvdbId": 376098, "tmdbId": 202555, "id": 95 },
+      "episode": { "seriesId": 95, "seasonNumber": 1, "episodeNumber": 4, "title": "Episode 4", "airDateUtc": "2026-09-29T01:00:00Z", "hasFile": false, "id": 13004 },
+      "size": 3221225472,
+      "title": "Lanterns.S01E04.1080p.WEB.h264-GROUP",
+      "added": "2026-09-29T03:00:00Z",
+      "status": "downloading",
+      "trackedDownloadStatus": "ok",
+      "trackedDownloadState": "downloading",
+      "statusMessages": [],
+      "downloadId": "SABnzbd_nzo_lan104",
+      "protocol": "usenet",
+      "downloadClient": "SABnzbd",
+      "episodeHasFile": false,
+      "sizeleft": 805306368,
+      "timeleft": "00:04:00",
+      "id": 2101000003
+    }
+  ]
+}

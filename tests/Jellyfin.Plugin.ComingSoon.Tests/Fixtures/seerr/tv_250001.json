@@ -1,0 +1,13 @@
+{
+  "id": 250001,
+  "backdropPath": "/seerr-ex-backdrop.jpg",
+  "posterPath": "/seerr-ex-poster.jpg",
+  "firstAirDate": "2026-06-04",
+  "name": "The Example Files",
+  "status": "Returning Series",
+  "seasons": [
+    { "airDate": "2026-06-04", "episodeCount": 8, "id": 470001, "name": "Season 1", "seasonNumber": 1 }
+  ],
+  "externalIds": { "tvdbId": 450123 },
+  "mediaInfo": { "id": 250, "mediaType": "tv", "tmdbId": 250001, "tvdbId": null, "status": 3, "status4k": 1, "seasons": [] }
+}

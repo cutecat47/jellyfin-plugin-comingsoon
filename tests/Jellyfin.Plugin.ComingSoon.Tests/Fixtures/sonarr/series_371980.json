@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Severance",
+    "status": "continuing",
+    "seasons": [
+      {
+        "seasonNumber": 1,
+        "monitored": true,
+        "statistics": { "previousAiring": "2022-04-08T01:00:00Z", "episodeFileCount": 9, "episodeCount": 9, "totalEpisodeCount": 9, "sizeOnDisk": 19327352832, "releaseGroups": [ "GROUP" ], "percentOfEpisodes": 100.0 }
+      },
+      {
+        "seasonNumber": 2,
+        "monitored": true,
+        "statistics": { "previousAiring": "2025-03-21T01:00:00Z", "episodeFileCount": 0, "episodeCount": 10, "totalEpisodeCount": 10, "sizeOnDisk": 0, "releaseGroups": [], "percentOfEpisodes": 0.0 }
+      },
+      {
+        "seasonNumber": 3,
+        "monitored": true,
+        "statistics": { "nextAiring": "2027-01-15T02:00:00Z", "episodeFileCount": 0, "episodeCount": 0, "totalEpisodeCount": 10, "sizeOnDisk": 0, "releaseGroups": [], "percentOfEpisodes": 0.0 }
+      }
+    ],
+    "year": 2022,
+    "tvdbId": 371980,
+    "tmdbId": 95396,
+    "id": 57
+  }
+]

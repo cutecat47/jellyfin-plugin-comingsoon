@@ -1,0 +1,8 @@
+{
+  "page": 2,
+  "pageSize": 2,
+  "totalRecords": 3,
+  "records": [
+    { "movie": { "title": "Paged Three", "tmdbId": 1003, "hasFile": false }, "size": 100, "sizeleft": 10, "status": "downloading", "trackedDownloadState": "downloading", "trackedDownloadStatus": "ok", "downloadId": "p3", "id": 3 }
+  ]
+}

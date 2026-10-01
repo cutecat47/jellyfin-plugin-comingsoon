@@ -1,0 +1,53 @@
+{
+  "page": 1,
+  "pageSize": 200,
+  "totalRecords": 2,
+  "records": [
+    {
+      "seriesId": 95,
+      "episodeId": 13004,
+      "seasonNumber": 1,
+      "series": { "title": "Lanterns", "images": [], "year": 2026, "tvdbId": 376098, "tmdbId": 202555, "id": 95 },
+      "episode": { "seriesId": 95, "seasonNumber": 1, "episodeNumber": 4, "title": "Episode 4", "airDateUtc": "2026-09-07T01:00:00Z", "hasFile": false, "id": 13004 },
+      "size": 0,
+      "title": "Lanterns 2026 S01E04 1080p HD H264 CAKES",
+      "added": "2026-09-30T10:00:00Z",
+      "status": "completed",
+      "trackedDownloadStatus": "warning",
+      "trackedDownloadState": "importPending",
+      "statusMessages": [
+        { "title": "Lanterns 2026 S01E04 1080p HD H264 CAKES", "messages": [ "No files found are eligible for import in /data/torrents/tv/Lanterns 2026 S01E04 1080p HD H264 CAKES.exe" ] }
+      ],
+      "downloadId": "AAAA0000BBBB1111CCCC2222DDDD3333EEEE4444",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent",
+      "episodeHasFile": false,
+      "sizeleft": 0,
+      "timeleft": "00:00:00",
+      "id": 2201000001
+    },
+    {
+      "seriesId": 91,
+      "episodeId": 12010,
+      "seasonNumber": 4,
+      "series": { "title": "Ted Lasso", "images": [], "year": 2020, "tvdbId": 383203, "tmdbId": 97546, "id": 91 },
+      "episode": { "seriesId": 91, "seasonNumber": 4, "episodeNumber": 10, "title": "TBA", "airDateUtc": "2026-10-07T04:00:00Z", "hasFile": false, "id": 12010 },
+      "size": 0,
+      "title": "Ted Lasso S04E10 1080p HEVC x265-MeGusta",
+      "added": "2026-10-01T06:00:00Z",
+      "status": "completed",
+      "trackedDownloadStatus": "warning",
+      "trackedDownloadState": "importPending",
+      "statusMessages": [
+        { "title": "Ted Lasso S04E10 1080p HEVC x265-MeGusta", "messages": [ "No files found are eligible for import in /data/torrents/tv/Ted Lasso S04E10 1080p HEVC x265-MeGusta.exe" ] }
+      ],
+      "downloadId": "FFFF5555AAAA6666BBBB7777CCCC8888DDDD9999",
+      "protocol": "torrent",
+      "downloadClient": "qBittorrent",
+      "episodeHasFile": false,
+      "sizeleft": 0,
+      "timeleft": "00:00:00",
+      "id": 2201000002
+    }
+  ]
+}
