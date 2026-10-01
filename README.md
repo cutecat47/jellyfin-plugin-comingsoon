@@ -94,7 +94,9 @@ would wrongly mark requests as available. Optionally, also untick the Coming Soo
 - **Removal**: when an item has left the download queue **and** Seerr reports it available or the
   real movie/season (all aired episodes) exists in another library, its stub and library item are
   deleted. Items that vanish from every source (request declined/deleted, download removed by hand)
-  are removed after 10 minutes — but only while all services are reachable, so an outage never
+  are removed after 10 minutes — as are Seerr requests whose movie/series was removed from (or
+  unmonitored in) Radarr/Sonarr, since nothing will download them — but only while all services are
+  reachable, so an outage never
   empties the library.
 - **Not included**: a native progress bar on stubs (setting a playback position). Jellyfin has no way
   to keep one library out of Continue Watching, so it can't meet that requirement.

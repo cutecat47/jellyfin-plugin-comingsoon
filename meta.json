@@ -1,6 +1,6 @@
 {
   "category": "General",
-  "changelog": "Fix: after renaming the Coming Soon library, the old name could linger as a phantom library in apps (e.g. Moonfin). The plugin now looks the library up by folder before every scan and never refreshes an entry whose folder no longer exists. Run Scan All Libraries once to remove an existing phantom.",
+  "changelog": "A requested movie or season that was removed from Radarr/Sonarr, or is unmonitored there, is no longer shown as Searching forever: its placeholder is removed after 10 minutes (only while all services are reachable). Requests that never reached Radarr/Sonarr are not shown.",
   "description": "Keeps a shared \"Coming Soon\" library of requested movies and shows that haven't arrived yet, with download progress and ETA in the item overview. Placeholder items are not playable.",
   "guid": "41434daf-8948-4e30-b7b9-cbeb0ff0ea32",
   "name": "Coming Soon",
@@ -8,7 +8,7 @@
   "owner": "cutecat47",
   "targetAbi": "12.1.0.0",
   "timestamp": "2026-10-01T00:00:00.0000000Z",
-  "version": "0.4.3.0",
+  "version": "0.4.4.0",
   "status": "Active",
   "autoUpdate": false,
   "assemblies": []

@@ -39,6 +39,7 @@ public sealed class ComingSoonTracker
     private static readonly TimeSpan ReleaseTtl = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan AvailabilityTtl = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan LookupFailureBackoff = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan NotFoundRecheck = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan SummaryHeartbeat = TimeSpan.FromMinutes(5);
     private const int MaxLookupsPerPoll = 10;
 
@@ -173,6 +174,46 @@ public sealed class ComingSoonTracker
 
         foreach (var entry in built)
         {
+            // Requested in Seerr, but Sonarr/Radarr dropped or unmonitored it: nothing will ever download it.
+            if (entry.NotInArr && !entry.InQueue)
+            {
+                if (!_entries.ContainsKey(entry.Key))
+                {
+                    continue; // never shown; don't start showing it
+                }
+
+                if (!_missingSince.TryGetValue(entry.Key, out var since))
+                {
+                    since = now;
+                    _missingSince[entry.Key] = since;
+                    _logger.LogInformation(
+                        "[ComingSoon] '{Name:l}' is still requested in Seerr but {App:l} isn't downloading it (removed or unmonitored); its stub goes in {Minutes} minutes unless that changes",
+                        entry.DisplayName,
+                        entry.Kind == MediaKind.Series ? "Sonarr" : "Radarr",
+                        (int)RemovalPolicy.AbandonGrace.TotalMinutes);
+                }
+
+                var unmanaged = RemovalPolicy.Decide(
+                    new RemovalFacts
+                    {
+                        InJellyfinLibrary = existsInJellyfin?.Invoke(entry) == true,
+                        AllSourcesHealthy = allHealthy,
+                        MissingSince = since,
+                    },
+                    now);
+
+                if (unmanaged == RemovalDecision.Keep)
+                {
+                    current[entry.Key] = entry;
+                }
+                else
+                {
+                    removals.Add(new EntryRemoval(entry, unmanaged));
+                }
+
+                continue;
+            }
+
             _missingSince.Remove(entry.Key);
             var decision = RemovalPolicy.Decide(
                 new RemovalFacts
@@ -238,7 +279,7 @@ public sealed class ComingSoonTracker
                 "[ComingSoon] Removing '{Name:l}' ({Key:l}): {Reason:l}",
                 removal.Entry.DisplayName,
                 removal.Entry.Key,
-                removal.Reason == RemovalDecision.RemoveArrived ? "now available" : "no longer requested or queued");
+                removal.Reason == RemovalDecision.RemoveArrived ? "now available" : "no longer requested, queued or monitored");
         }
 
         var updates = new List<EntryUpdate>();
@@ -452,7 +493,9 @@ public sealed class ComingSoonTracker
         try
         {
             var value = await fetch(cancellationToken).ConfigureAwait(false);
-            cache[key] = new Cached<TValue?>(value, now, false);
+            // "Not in Radarr/Sonarr" is re-checked after a minute (Seerr may be handing it over right now).
+            var at = value is MovieReleaseInfo { InRadarr: false } or SeriesReleaseInfo { InSonarr: false } ? now - ttl + NotFoundRecheck : now;
+            cache[key] = new Cached<TValue?>(value, at, false);
             return value;
         }
         catch (ServiceException ex)

@@ -285,6 +285,62 @@ public class TrackerTests
     }
 
     [Fact]
+    public async Task SeriesRemovedFromSonarr_StubGoesAfterGrace_EvenThoughSeerrStillHasTheRequest()
+    {
+        var tracker = NewTracker();
+        var first = await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+        Assert.Contains(first.Entries, e => e.Key == "tv-tvdb371980-s03");
+
+        // User deletes Severance from Sonarr; the Seerr request stays open.
+        _clients.Sonarr.On("/api/v3/series", () => FixtureHandler.Ok("[]"), "tvdbId=371980");
+        _time.Advance(TimeSpan.FromMinutes(11)); // past the 10-minute lookup cache
+        var during = await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+
+        Assert.Contains(during.Entries, e => e.Key == "tv-tvdb371980-s03");
+        Assert.Contains(_log.Messages(), m => m.StartsWith("[ComingSoon] 'Severance - Season 3' is still requested in Seerr but Sonarr isn't downloading it", StringComparison.Ordinal));
+
+        _time.Advance(RemovalPolicy.AbandonGrace);
+        var after = await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+
+        Assert.Contains(after.Removals, r => r.Entry.Key == "tv-tvdb371980-s03" && r.Reason == RemovalDecision.RemoveAbandoned);
+        Assert.Contains(after.Entries, e => e.Key == "tv-tvdb371980-s02"); // still in the download queue: untouched
+    }
+
+    [Fact]
+    public async Task SeasonUnmonitoredInSonarr_IsTreatedTheSame()
+    {
+        var tracker = NewTracker();
+        await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+
+        _clients.Sonarr.On(
+            "/api/v3/series",
+            () => FixtureHandler.Ok(Fixtures.Text("sonarr/series_371980.json").Replace("\"seasonNumber\": 3,\n        \"monitored\": true", "\"seasonNumber\": 3,\n        \"monitored\": false", StringComparison.Ordinal)),
+            "tvdbId=371980");
+        _time.Advance(TimeSpan.FromMinutes(11));
+        await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+        _time.Advance(RemovalPolicy.AbandonGrace);
+        var after = await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+
+        Assert.Contains(after.Removals, r => r.Entry.Key == "tv-tvdb371980-s03");
+    }
+
+    [Fact]
+    public async Task RequestNeverInRadarr_IsNotShown_AndReappearsIfAdded()
+    {
+        _clients.Radarr.On("/api/v3/movie", () => FixtureHandler.Ok("[]"), "tmdbId=550");
+        var tracker = NewTracker();
+
+        var first = await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(first.Entries, e => e.Key == "movie-tmdb550");
+
+        // Seerr hands it to Radarr a moment later; "not found" is re-checked after a minute.
+        _clients.Radarr.On("/api/v3/movie", "radarr/movie_550.json", "tmdbId=550");
+        _time.Advance(TimeSpan.FromSeconds(61));
+        var later = await tracker.PollAsync(Config(), null, TestContext.Current.CancellationToken);
+        Assert.Contains(later.Entries, e => e.Key == "movie-tmdb550");
+    }
+
+    [Fact]
     public async Task ConnectionTester_ReportsEachService()
     {
         var logger = new ListLogger<ConnectionTester>();

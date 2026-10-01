@@ -176,7 +176,32 @@ public static class EntryBuilder
             BackdropUrl = SeerrParser.TmdbImageUrl(details?.BackdropPath, BackdropSize),
             InQueue = false,
             InSeerr = true,
+            NotInArr = request.Kind == MediaKind.Movie
+                ? MovieNotManaged(request.TmdbId, input)
+                : SeasonNotManaged(tvdb, season ?? 0, input),
         };
+    }
+
+    /// <summary>Radarr knows the movie is gone or unmonitored (only when Radarr answered the lookup).</summary>
+    private static bool MovieNotManaged(int tmdbId, MergeInput input)
+        => input.Movies.TryGetValue(tmdbId, out var radarr)
+            && radarr.HasFile != true
+            && (!radarr.InRadarr || radarr.Monitored == false);
+
+    /// <summary>Sonarr knows the series is gone, or the series/season is unmonitored.</summary>
+    private static bool SeasonNotManaged(int? tvdb, int season, MergeInput input)
+    {
+        if (tvdb is not int id || !input.Series.TryGetValue(id, out var sonarr))
+        {
+            return false;
+        }
+
+        if (!sonarr.InSonarr || sonarr.Monitored == false)
+        {
+            return true;
+        }
+
+        return sonarr.Seasons.TryGetValue(season, out var s) && s.Monitored == false;
     }
 
     private static (TrackedStatus Status, string? Detail, DateTimeOffset? Release) MovieReleaseStatus(SeerrRequest request, SeerrDetails? details, MergeInput input)

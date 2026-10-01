@@ -57,6 +57,12 @@ public sealed record TrackedEntry
     /// <summary>Gets how many episodes of the season have aired, per Sonarr (series only; null when unknown).</summary>
     public int? AiredEpisodes { get; init; }
 
+    /// <summary>
+    /// Gets a value indicating whether the entry is requested in Seerr but Radarr/Sonarr won't download it:
+    /// the movie/series isn't there any more, or it (or the season) isn't monitored.
+    /// </summary>
+    public bool NotInArr { get; init; }
+
     /// <summary>Gets a value indicating whether the entry is in the Radarr/Sonarr queue.</summary>
     public bool InQueue { get; init; }
 
