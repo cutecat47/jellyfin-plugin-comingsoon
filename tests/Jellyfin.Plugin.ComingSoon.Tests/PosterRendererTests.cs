@@ -54,22 +54,33 @@ public class PosterRendererTests
         using var bitmap = Decode(jpeg);
         Assert.Equal(PosterRenderer.Width, bitmap.Width);
         Assert.Equal(PosterRenderer.Height, bitmap.Height);
+
+        var thumb = PosterRenderer.RenderThumb(withPoster ? SamplePoster() : null, "Severance - Season 2", state);
+        Save($"{status}-{(withPoster ? "poster" : "titlecard")}-thumb", thumb);
+        using var thumbBitmap = Decode(thumb);
+        Assert.Equal(PosterRenderer.ThumbWidth, thumbBitmap.Width);
+        Assert.Equal(PosterRenderer.ThumbHeight, thumbBitmap.Height);
     }
 
     [Theory]
-    [InlineData(25)]
-    [InlineData(60)]
-    [InlineData(90)]
-    public void ProgressBar_IsFilledToThePercentage(int percent)
+    [InlineData(25, false)]
+    [InlineData(60, false)]
+    [InlineData(90, false)]
+    [InlineData(25, true)]
+    [InlineData(60, true)]
+    [InlineData(90, true)]
+    public void ProgressBar_IsFilledToThePercentage(int percent, bool thumb)
     {
         var state = new DisplayState(TrackedStatus.Downloading, percent, EtaBucket.FewHours, null, null);
-        using var bitmap = Decode(PosterRenderer.Render(SamplePoster(), "Project Hail Mary", state));
+        using var bitmap = Decode(thumb
+            ? PosterRenderer.RenderThumb(SamplePoster(), "Project Hail Mary", state)
+            : PosterRenderer.Render(SamplePoster(), "Project Hail Mary", state));
 
-        // Bar spans x = 32..568 at y = Height-102 .. Height-82.
-        var y = PosterRenderer.Height - 92;
-        var barWidth = PosterRenderer.Width - 64;
-        var insideX = 32 + (int)(barWidth * (percent / 100.0)) - 12;
-        var outsideX = 32 + (int)(barWidth * (percent / 100.0)) + 12;
+        var bar = PosterRenderer.BarRect(bitmap.Width, bitmap.Height);
+        var y = (int)bar.MidY;
+        var edge = bar.Left + (bar.Width * (percent / 100f));
+        var insideX = (int)edge - 12;
+        var outsideX = (int)edge + 12;
 
         var accent = PosterRenderer.AccentFor(TrackedStatus.Downloading);
         Assert.True(Close(bitmap.GetPixel(insideX, y), accent), $"pixel at {insideX} should be the accent colour");

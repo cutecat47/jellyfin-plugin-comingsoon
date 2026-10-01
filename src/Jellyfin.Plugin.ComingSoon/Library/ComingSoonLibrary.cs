@@ -61,42 +61,35 @@ public sealed class ComingSoonLibrary(
     private string? _warnedAbout;
     private bool _warnedRenderer;
 
-    /// <summary>The original artwork, kept next to the stub (dot-file: Jellyfin ignores it) so re-renders don't re-download.</summary>
-    public static string PosterSourcePath(string mediaPath) => Path.Combine(Path.GetDirectoryName(mediaPath)!, ".poster-source");
+    /// <summary>Original artwork kept next to the stub (dot-files: Jellyfin ignores them) so re-renders don't re-download.</summary>
+    public static string ArtworkSourcePath(string mediaPath, ImageType type)
+        => Path.Combine(Path.GetDirectoryName(mediaPath)!, type == ImageType.Backdrop ? ".backdrop-source" : ".poster-source");
 
     /// <summary>
-    /// Renders the status overlay onto the poster and saves it as the item's primary image. Falls back to
-    /// the plain artwork if rendering isn't possible. Returns the artwork URL now cached locally.
+    /// Saves the poster (Primary) and the 16:9 thumbnail (Thumb, used by Moonfin's thumbnail rows) with the
+    /// status drawn on, plus the plain backdrop for detail pages. Falls back to plain artwork if drawing
+    /// isn't possible. Returns the artwork URLs now cached locally.
     /// </summary>
-    private async Task<string?> SavePosterAsync(BaseItem item, string mediaPath, StubRecord record, DisplayState state, CancellationToken cancellationToken)
+    private async Task<(string? Poster, string? Backdrop)> SaveArtworkAsync(BaseItem item, string mediaPath, StubRecord record, DisplayState state, CancellationToken cancellationToken)
     {
         var entry = record.Entry;
-        var sourcePath = PosterSourcePath(mediaPath);
-        var cachedUrl = record.AppliedPosterUrl;
+        var posterPath = ArtworkSourcePath(mediaPath, ImageType.Primary);
+        var backdropPath = ArtworkSourcePath(mediaPath, ImageType.Backdrop);
+        var posterUrl = await CacheSourceAsync(entry.PosterUrl, record.AppliedPosterUrl, posterPath, "poster", entry, cancellationToken).ConfigureAwait(false);
+        var backdropUrl = await CacheSourceAsync(entry.BackdropUrl, record.AppliedBackdropUrl, backdropPath, "backdrop", entry, cancellationToken).ConfigureAwait(false);
 
-        if (!string.IsNullOrEmpty(entry.PosterUrl) && (entry.PosterUrl != cachedUrl || !File.Exists(sourcePath)))
-        {
-            try
-            {
-                using var http = httpClientFactory.CreateClient(NamedClient.Default);
-                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                timeout.CancelAfter(TimeSpan.FromSeconds(20));
-                var bytes = await http.GetByteArrayAsync(new Uri(entry.PosterUrl), timeout.Token).ConfigureAwait(false);
-                await File.WriteAllBytesAsync(sourcePath, bytes, cancellationToken).ConfigureAwait(false);
-                cachedUrl = entry.PosterUrl;
-            }
-            catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or UriFormatException)
-            {
-                logger.LogWarning("[ComingSoon] Couldn't download poster for '{Name:l}': {Error:l}", entry.DisplayName, ex.Message);
-            }
-        }
+        // Plain backdrop for the detail page background.
+        await SaveImageAsync(item, entry.BackdropUrl, record.AppliedBackdropUrl, ImageType.Backdrop, entry, cancellationToken).ConfigureAwait(false);
 
-        byte[]? source = File.Exists(sourcePath) ? await File.ReadAllBytesAsync(sourcePath, cancellationToken).ConfigureAwait(false) : null;
+        var poster = await ReadIfExistsAsync(posterPath, cancellationToken).ConfigureAwait(false);
+        var backdrop = await ReadIfExistsAsync(backdropPath, cancellationToken).ConfigureAwait(false);
 
-        byte[] rendered;
+        byte[] posterImage;
+        byte[] thumbImage;
         try
         {
-            rendered = PosterRenderer.Render(source, entry.DisplayName, state);
+            posterImage = PosterRenderer.Render(poster, entry.DisplayName, state);
+            thumbImage = PosterRenderer.RenderThumb(backdrop ?? poster, entry.DisplayName, state);
         }
         catch (Exception ex) when (ex is TypeInitializationException or DllNotFoundException or TypeLoadException or FileNotFoundException or FileLoadException or InvalidOperationException)
         {
@@ -106,13 +99,50 @@ public sealed class ComingSoonLibrary(
                 _warnedRenderer = true;
             }
 
-            return await SaveImageAsync(item, entry.PosterUrl, record.AppliedPosterUrl, ImageType.Primary, entry, cancellationToken).ConfigureAwait(false);
+            await SaveImageAsync(item, entry.PosterUrl, record.AppliedPosterUrl, ImageType.Primary, entry, cancellationToken).ConfigureAwait(false);
+            return (posterUrl, backdropUrl);
         }
 
-        using var stream = new MemoryStream(rendered);
-        await providerManager.SaveImage(item, stream, "image/jpeg", ImageType.Primary, null, cancellationToken).ConfigureAwait(false);
-        return cachedUrl;
+        using (var stream = new MemoryStream(posterImage))
+        {
+            await providerManager.SaveImage(item, stream, "image/jpeg", ImageType.Primary, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        using (var stream = new MemoryStream(thumbImage))
+        {
+            await providerManager.SaveImage(item, stream, "image/jpeg", ImageType.Thumb, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        return (posterUrl, backdropUrl);
     }
+
+    private static async Task<byte[]?> ReadIfExistsAsync(string path, CancellationToken cancellationToken)
+        => File.Exists(path) ? await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false) : null;
+
+    /// <summary>Downloads artwork to <paramref name="path"/> if the URL changed or the file is missing. Returns the URL now cached.</summary>
+    private async Task<string?> CacheSourceAsync(string? url, string? cachedUrl, string path, string what, TrackedEntry entry, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(url) || (url == cachedUrl && File.Exists(path)))
+        {
+            return cachedUrl;
+        }
+
+        try
+        {
+            using var http = httpClientFactory.CreateClient(NamedClient.Default);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(20));
+            var bytes = await http.GetByteArrayAsync(new Uri(url), timeout.Token).ConfigureAwait(false);
+            await File.WriteAllBytesAsync(path, bytes, cancellationToken).ConfigureAwait(false);
+            return url;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or UriFormatException)
+        {
+            logger.LogWarning("[ComingSoon] Couldn't download {What:l} for '{Name:l}': {Error:l}", what, entry.DisplayName, ex.Message);
+            return cachedUrl;
+        }
+    }
+
 
     public async Task<LibraryState> EnsureLibraryAsync(string root, string name, CancellationToken cancellationToken)
     {
@@ -211,8 +241,7 @@ public sealed class ComingSoonLibrary(
         }
 
         var entry = record.Entry;
-        var poster = await SavePosterAsync(item, mediaPath, record, state, cancellationToken).ConfigureAwait(false);
-        var backdrop = await SaveImageAsync(item, entry.BackdropUrl, record.AppliedBackdropUrl, ImageType.Backdrop, entry, cancellationToken).ConfigureAwait(false);
+        var (poster, backdrop) = await SaveArtworkAsync(item, mediaPath, record, state, cancellationToken).ConfigureAwait(false);
 
         StubMetadata.Apply(item, entry, state, record.Overview ?? StatusText.Overview(state));
         await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);

@@ -1,7 +1,7 @@
 ---
 name: "Coming Soon"
 guid: "41434daf-8948-4e30-b7b9-cbeb0ff0ea32"
-version: "0.4.0.0"
+version: "0.4.1.0"
 targetAbi: "12.1.0.0"
 framework: "net10.0"
 overview: "Download progress library for Seerr, Sonarr and Radarr"
@@ -13,4 +13,4 @@ owner: "cutecat47"
 artifacts:
 - "Jellyfin.Plugin.ComingSoon.dll"
 changelog: >
-  Posters with progress bars, status and ETA drawn on.
+  Progress drawn onto posters and 16:9 thumbnails.

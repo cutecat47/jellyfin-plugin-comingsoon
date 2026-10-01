@@ -8,17 +8,18 @@ using SkiaSharp;
 namespace Jellyfin.Plugin.ComingSoon.Library;
 
 /// <summary>
-/// Draws the status onto a stub's poster — badge, headline, percentage, progress bar and a detail line —
-/// so every client's poster grid shows progress without any client changes. Uses the SkiaSharp that
-/// Jellyfin itself ships (same version), and bundled Lato fonts (SIL OFL) so text never depends on
-/// what fonts the container has.
+/// Draws the status onto a stub's artwork — badge, headline, percentage, progress bar and a detail line —
+/// so client home rows and grids show progress without any client changes. Renders the portrait poster
+/// (Primary) and a 16:9 thumbnail (Thumb, used by Moonfin's "thumbnail" rows). Uses the SkiaSharp that
+/// Jellyfin itself ships (same version) and bundled Lato fonts (SIL OFL), so text never depends on the
+/// container's fonts.
 /// </summary>
 public static class PosterRenderer
 {
     public const int Width = 600;
     public const int Height = 900;
-
-    private const float Margin = 32;
+    public const int ThumbWidth = 960;
+    public const int ThumbHeight = 540;
 
     private static readonly Lazy<SKTypeface> Bold = new(() => LoadFont("Lato-Bold.ttf"));
     private static readonly Lazy<SKTypeface> Regular = new(() => LoadFont("Lato-Regular.ttf"));
@@ -33,126 +34,142 @@ public static class PosterRenderer
         _ => new SKColor(0xB0, 0x7C, 0xD8),
     };
 
-    /// <summary>Renders a 600x900 JPEG. <paramref name="source"/> may be null or undecodable (a title card is drawn instead).</summary>
-    public static byte[] Render(byte[]? source, string title, DisplayState state)
+    /// <summary>Portrait poster, 600x900 JPEG. <paramref name="source"/> may be null or undecodable (a title card is drawn instead).</summary>
+    public static byte[] Render(byte[]? source, string title, DisplayState state) => Render(source, title, state, Width, Height);
+
+    /// <summary>Landscape thumbnail, 960x540 JPEG, best made from the backdrop.</summary>
+    public static byte[] RenderThumb(byte[]? source, string title, DisplayState state) => Render(source, title, state, ThumbWidth, ThumbHeight);
+
+    private static byte[] Render(byte[]? source, string title, DisplayState state, int w, int h)
     {
+        var layout = new Layout(w, h);
         var accent = AccentFor(state.Status);
-        var info = new SKImageInfo(Width, Height, SKColorType.Rgba8888, SKAlphaType.Premul);
-        using var surface = SKSurface.Create(info);
+        using var surface = SKSurface.Create(new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Premul));
         var canvas = surface.Canvas;
 
-        using (var poster = source is { Length: > 0 } ? SKImage.FromEncodedData(source) : null)
+        using (var art = source is { Length: > 0 } ? SKImage.FromEncodedData(source) : null)
         {
-            if (poster is not null)
+            if (art is not null)
             {
-                DrawCover(canvas, poster);
+                DrawCover(canvas, art, layout);
             }
             else
             {
-                DrawTitleCard(canvas, title, accent);
+                DrawTitleCard(canvas, title, accent, layout);
             }
         }
 
-        DrawBadge(canvas, accent);
-        DrawStatusPanel(canvas, state, accent);
+        DrawBadge(canvas, accent, layout);
+        DrawStatusPanel(canvas, state, accent, layout);
 
         using var image = surface.Snapshot();
         using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90);
         return data.ToArray();
     }
 
-    private static void DrawCover(SKCanvas canvas, SKImage poster)
+    private static void DrawCover(SKCanvas canvas, SKImage art, Layout l)
     {
-        var scale = Math.Max((float)Width / poster.Width, (float)Height / poster.Height);
-        var w = poster.Width * scale;
-        var h = poster.Height * scale;
-        var dest = SKRect.Create((Width - w) / 2, (Height - h) / 2, w, h);
-        canvas.DrawImage(poster, dest, new SKSamplingOptions(SKCubicResampler.Mitchell));
+        var scale = Math.Max((float)l.W / art.Width, (float)l.H / art.Height);
+        var w = art.Width * scale;
+        var h = art.Height * scale;
+        var dest = SKRect.Create((l.W - w) / 2, (l.H - h) / 2, w, h);
+        canvas.DrawImage(art, dest, new SKSamplingOptions(SKCubicResampler.Mitchell));
     }
 
-    private static void DrawTitleCard(SKCanvas canvas, string title, SKColor accent)
+    private static void DrawTitleCard(SKCanvas canvas, string title, SKColor accent, Layout l)
     {
         using var background = new SKPaint();
         background.Shader = SKShader.CreateLinearGradient(
             new SKPoint(0, 0),
-            new SKPoint(0, Height),
+            new SKPoint(0, l.H),
             [Blend(accent, new SKColor(0x10, 0x14, 0x18), 0.55f), new SKColor(0x10, 0x14, 0x18)],
             SKShaderTileMode.Clamp);
-        canvas.DrawRect(0, 0, Width, Height, background);
+        canvas.DrawRect(0, 0, l.W, l.H, background);
 
-        using var font = new SKFont(Bold.Value, 56);
+        using var font = new SKFont(Bold.Value, 56 * l.K);
         using var paint = new SKPaint { Color = SKColors.White, IsAntialias = true };
-        var lines = Wrap(title, font, Width - (2 * Margin), maxLines: 5);
-        var lineHeight = 66f;
-        var top = (Height * 0.42f) - (lines.Count * lineHeight / 2) + 48;
+        var lineHeight = 66 * l.K;
+        var available = l.PanelTop - (100 * l.K);
+        var maxLines = Math.Max(1, Math.Min(5, (int)(available / lineHeight)));
+        var lines = Wrap(title, font, l.W - (2 * l.Margin), maxLines);
+        var top = (100 * l.K) + ((available - (lines.Count * lineHeight)) / 2) + (font.Size * 0.8f);
         for (var i = 0; i < lines.Count; i++)
         {
-            canvas.DrawText(lines[i], Width / 2f, top + (i * lineHeight), SKTextAlign.Center, font, paint);
+            canvas.DrawText(lines[i], l.W / 2f, top + (i * lineHeight), SKTextAlign.Center, font, paint);
         }
     }
 
-    private static void DrawBadge(SKCanvas canvas, SKColor accent)
+    private static void DrawBadge(SKCanvas canvas, SKColor accent, Layout l)
     {
         const string Text = "COMING SOON";
-        using var font = new SKFont(Bold.Value, 20);
+        using var font = new SKFont(Bold.Value, 20 * l.K);
         var textWidth = font.MeasureText(Text);
-        var rect = SKRect.Create(24, 24, textWidth + 40, 40);
+        var rect = SKRect.Create(24 * l.K, 24 * l.K, textWidth + (40 * l.K), 40 * l.K);
 
         using var fill = new SKPaint { Color = new SKColor(0, 0, 0, 190), IsAntialias = true };
-        canvas.DrawRoundRect(rect, 20, 20, fill);
+        canvas.DrawRoundRect(rect, rect.Height / 2, rect.Height / 2, fill);
         using var dot = new SKPaint { Color = accent, IsAntialias = true };
-        canvas.DrawCircle(rect.Left + 18, rect.MidY, 5, dot);
+        canvas.DrawCircle(rect.Left + (18 * l.K), rect.MidY, 5 * l.K, dot);
         using var text = new SKPaint { Color = SKColors.White, IsAntialias = true };
-        canvas.DrawText(Text, rect.Left + 30, rect.MidY + 7, SKTextAlign.Left, font, text);
+        canvas.DrawText(Text, rect.Left + (30 * l.K), rect.MidY + (7 * l.K), SKTextAlign.Left, font, text);
     }
 
-    private static void DrawStatusPanel(SKCanvas canvas, DisplayState state, SKColor accent)
+    private static void DrawStatusPanel(SKCanvas canvas, DisplayState state, SKColor accent, Layout l)
     {
         var (headline, subline, progress) = StatusText.PosterLines(state);
 
-        // Fade to near-black so the text reads on any poster.
+        // Fade to near-black so the text reads on any artwork.
         using (var shade = new SKPaint())
         {
             shade.Shader = SKShader.CreateLinearGradient(
-                new SKPoint(0, Height - 300),
-                new SKPoint(0, Height),
+                new SKPoint(0, l.PanelTop),
+                new SKPoint(0, l.H),
                 [new SKColor(0, 0, 0, 0), new SKColor(0, 0, 0, 215), new SKColor(0, 0, 0, 240)],
                 [0f, 0.45f, 1f],
                 SKShaderTileMode.Clamp);
-            canvas.DrawRect(0, Height - 300, Width, 300, shade);
+            canvas.DrawRect(0, l.PanelTop, l.W, l.H - l.PanelTop, shade);
         }
 
-        using var headlineFont = new SKFont(Bold.Value, 40);
-        using var sublineFont = new SKFont(Regular.Value, 30);
+        using var headlineFont = new SKFont(Bold.Value, 40 * l.K);
+        using var sublineFont = new SKFont(Regular.Value, 30 * l.K);
         using var accentPaint = new SKPaint { Color = accent, IsAntialias = true };
         using var whitePaint = new SKPaint { Color = SKColors.White, IsAntialias = true };
         using var softPaint = new SKPaint { Color = new SKColor(255, 255, 255, 220), IsAntialias = true };
 
-        var right = Width - Margin;
+        var right = l.W - l.Margin;
         var percentText = state.Percent is int p && state.Status is TrackedStatus.Downloading or TrackedStatus.Stalled
             ? p.ToString(CultureInfo.InvariantCulture) + "%"
             : null;
-        var percentWidth = percentText is null ? 0 : headlineFont.MeasureText(percentText) + 16;
+        var percentWidth = percentText is null ? 0 : headlineFont.MeasureText(percentText) + (16 * l.K);
 
-        canvas.DrawText(Ellipsize(headline, headlineFont, right - Margin - percentWidth), Margin, Height - 126, SKTextAlign.Left, headlineFont, accentPaint);
+        var headlineY = l.H - (126 * l.K);
+        canvas.DrawText(Ellipsize(headline, headlineFont, right - l.Margin - percentWidth), l.Margin, headlineY, SKTextAlign.Left, headlineFont, accentPaint);
         if (percentText is not null)
         {
-            canvas.DrawText(percentText, right, Height - 126, SKTextAlign.Right, headlineFont, whitePaint);
+            canvas.DrawText(percentText, right, headlineY, SKTextAlign.Right, headlineFont, whitePaint);
         }
 
-        var bar = SKRect.Create(Margin, Height - 102, Width - (2 * Margin), 20);
+        var bar = BarRect(l.W, l.H);
+        var radius = bar.Height / 2;
         using (var track = new SKPaint { Color = new SKColor(255, 255, 255, (byte)(progress is null ? 40 : 70)), IsAntialias = true })
         {
-            canvas.DrawRoundRect(bar, 10, 10, track);
+            canvas.DrawRoundRect(bar, radius, radius, track);
         }
 
         if (progress is double fraction && fraction > 0)
         {
             var filled = SKRect.Create(bar.Left, bar.Top, Math.Max(bar.Height, bar.Width * (float)Math.Clamp(fraction, 0, 1)), bar.Height);
-            canvas.DrawRoundRect(filled, 10, 10, accentPaint);
+            canvas.DrawRoundRect(filled, radius, radius, accentPaint);
         }
 
-        canvas.DrawText(Ellipsize(subline, sublineFont, Width - (2 * Margin)), Margin, Height - 42, SKTextAlign.Left, sublineFont, softPaint);
+        canvas.DrawText(Ellipsize(subline, sublineFont, l.W - (2 * l.Margin)), l.Margin, l.H - (42 * l.K), SKTextAlign.Left, sublineFont, softPaint);
+    }
+
+    /// <summary>Where the progress bar is drawn (exposed for tests).</summary>
+    public static SKRect BarRect(int w, int h)
+    {
+        var l = new Layout(w, h);
+        return SKRect.Create(l.Margin, h - (102 * l.K), w - (2 * l.Margin), 20 * l.K);
     }
 
     private static List<string> Wrap(string text, SKFont font, float maxWidth, int maxLines)
@@ -222,5 +239,15 @@ public static class PosterRenderer
         stream.CopyTo(memory);
         using var data = SKData.CreateCopy(memory.ToArray());
         return SKTypeface.FromData(data) ?? SKTypeface.Default;
+    }
+
+    /// <summary>Sizes are designed for a 600-wide poster and a 540-high thumbnail; K scales them to fit both.</summary>
+    private readonly record struct Layout(int W, int H)
+    {
+        public float K => Math.Min(W / 600f, H / 540f);
+
+        public float Margin => 32 * K;
+
+        public float PanelTop => H - Math.Min(300 * K, H * 0.55f);
     }
 }

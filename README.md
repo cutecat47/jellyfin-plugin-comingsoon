@@ -100,7 +100,7 @@ would wrongly mark requests as available. Optionally, also untick the Coming Soo
 
 ## Posters with progress
 
-Each placeholder's poster has the status drawn onto it — a *COMING SOON* badge, the status in its
+Each placeholder's poster — and a 16:9 thumbnail, used by Moonfin rows set to "Thumbnail" — has the status drawn onto it — a *COMING SOON* badge, the status in its
 colour, the percentage, a progress bar and a detail line ("A few hours left", "Expected 5 Mar 2027",
 "Looking for a release", a stall reason…). Items without artwork get a title card instead. Posters are
 redrawn whenever the visible status changes (at most once a minute per item), so the poster grid in
