@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.4.7.0",
+        "changelog": "Fix: requested items could sit at Importing until the next scheduled library scan. Once Radarr/Sonarr have imported a title, the plugin asks Jellyfin to scan that folder (falling back to scanning Movies/Shows libraries if Jellyfin cannot see the path), so the real item appears and the placeholder goes away within minutes.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/cutecat47/jellyfin-plugin-comingsoon/releases/download/v0.4.7.0/comingsoon_0.4.7.0.zip",
+        "checksum": "450004145cb59946d46c382687cae12f",
+        "timestamp": "2026-10-01T11:38:46.0000000Z"
+      },
+      {
         "version": "0.4.6.0",
         "changelog": "Fix: plugin updates were hidden in Jellyfin because the package turned automatic updates off. Install this version once from the Catalog; later versions then appear and update normally.",
         "targetAbi": "12.1.0.0",
