@@ -179,8 +179,14 @@ public static class EntryBuilder
             NotInArr = request.Kind == MediaKind.Movie
                 ? MovieNotManaged(request.TmdbId, input)
                 : SeasonNotManaged(tvdb, season ?? 0, input),
+            OnDisk = status == TrackedStatus.Importing && detail == WaitingForLibrary,
+            ArrPath = request.Kind == MediaKind.Movie
+                ? (input.Movies.TryGetValue(request.TmdbId, out var m) ? m.Path : null)
+                : (tvdb is int t && input.Series.TryGetValue(t, out var s) ? s.Path : null),
         };
     }
+
+    private const string WaitingForLibrary = "Waiting for library scan";
 
     /// <summary>Radarr knows the movie is gone or unmonitored (only when Radarr answered the lookup).</summary>
     private static bool MovieNotManaged(int tmdbId, MergeInput input)
@@ -210,7 +216,7 @@ public static class EntryBuilder
         {
             if (radarr.HasFile == true)
             {
-                return (TrackedStatus.Importing, "Waiting for library scan", null);
+                return (TrackedStatus.Importing, WaitingForLibrary, null);
             }
 
             if (radarr.IsAvailable == false)
@@ -248,7 +254,7 @@ public static class EntryBuilder
                 // Everything aired is downloaded: either more episodes are coming, or Seerr hasn't caught up yet.
                 return s.TotalEpisodeCount > s.EpisodeCount || s.NextAiring is not null
                     ? (TrackedStatus.WaitingForRelease, progress, s.NextAiring)
-                    : (TrackedStatus.Importing, "Waiting for library scan", null);
+                    : (TrackedStatus.Importing, WaitingForLibrary, null);
             }
 
             return (TrackedStatus.Searching, progress, null);

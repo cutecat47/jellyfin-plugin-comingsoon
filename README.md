@@ -92,6 +92,10 @@ would wrongly mark requests as available. Optionally, also untick the Coming Soo
   message like *"Still downloading — a few hours left"*; (2) if a client starts anyway, the session is
   sent **Stop** plus the same message. Watch state is cleared afterwards, so stubs never appear in
   Continue Watching or as played. If both ever failed, all that plays is the "Still downloading" clip.
+- **Nudging Jellyfin**: once Radarr/Sonarr have imported a requested title, the plugin asks Jellyfin to
+  scan that folder (like *arr "Connect → Jellyfin"; every 5 min, up to 6 times) so it shows up within a
+  minute or two. If Jellyfin can't see the folder (different paths in the containers), it scans your
+  Movies/Shows libraries instead, at most every 15 minutes, and logs a warning.
 - **Removal**: when an item has left the download queue **and** Seerr reports it available or the
   real movie/season (all aired episodes) exists in another library, its stub and library item are
   deleted. Items that vanish from every source (request declined/deleted, download removed by hand)

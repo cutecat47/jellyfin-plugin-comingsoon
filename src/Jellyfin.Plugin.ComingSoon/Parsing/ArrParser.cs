@@ -32,7 +32,7 @@ public static class ArrParser
         var next = new[] { m.Date("digitalRelease"), m.Date("physicalRelease") }.Where(d => d > now).Min()
             ?? new[] { m.Date("inCinemas") }.Where(d => d > now).Min();
 
-        return new MovieReleaseInfo(true, m.Bool("isAvailable"), m.Bool("hasFile"), next, m.Bool("monitored"));
+        return new MovieReleaseInfo(true, m.Bool("isAvailable"), m.Bool("hasFile"), next, m.Bool("monitored"), m.Str("path"));
     }
 
     /// <summary>Parses GET /api/v3/series?tvdbId=X (an array with zero or one series).</summary>
@@ -64,7 +64,7 @@ public static class ArrParser
                 s.Bool("monitored"));
         }
 
-        return new SeriesReleaseInfo(true, seasons, series.Value.Bool("monitored"));
+        return new SeriesReleaseInfo(true, seasons, series.Value.Bool("monitored"), series.Value.Str("path"));
     }
 
     /// <summary>Parses GET /api/v3/system/status and returns the version string.</summary>

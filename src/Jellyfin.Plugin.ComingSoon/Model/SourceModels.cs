@@ -132,7 +132,7 @@ public sealed record SeerrDetails
 }
 
 /// <summary>Radarr's view of whether a movie can be grabbed yet.</summary>
-public sealed record MovieReleaseInfo(bool InRadarr, bool? IsAvailable, bool? HasFile, DateTimeOffset? NextReleaseDate, bool? Monitored = null);
+public sealed record MovieReleaseInfo(bool InRadarr, bool? IsAvailable, bool? HasFile, DateTimeOffset? NextReleaseDate, bool? Monitored = null, string? Path = null);
 
 /// <summary>Sonarr's per-season statistics.</summary>
 public sealed record SeasonReleaseInfo(
@@ -145,7 +145,7 @@ public sealed record SeasonReleaseInfo(
     bool? Monitored = null);
 
 /// <summary>Sonarr's view of a series.</summary>
-public sealed record SeriesReleaseInfo(bool InSonarr, IReadOnlyDictionary<int, SeasonReleaseInfo> Seasons, bool? Monitored = null);
+public sealed record SeriesReleaseInfo(bool InSonarr, IReadOnlyDictionary<int, SeasonReleaseInfo> Seasons, bool? Monitored = null, string? Path = null);
 
 /// <summary>Seerr media status values (server/constants/media.ts).</summary>
 public static class SeerrMediaStatus

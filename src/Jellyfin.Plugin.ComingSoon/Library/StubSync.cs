@@ -202,6 +202,12 @@ public sealed class StubSync
             return;
         }
 
+        // Radarr/Sonarr have the files but Jellyfin hasn't indexed them: point Jellyfin at the folder.
+        foreach (var entry in snapshot.Entries.Where(e => e.OnDisk))
+        {
+            _library.RequestScanFor(entry);
+        }
+
         // Rescan when stubs were added/removed, or periodically while some still aren't indexed.
         var stuck = _pending.Values.Any(since => now - since >= PendingRescanAfter);
         if (structureChanged || (stuck && now - _lastScanAt >= PendingRescanAfter))

@@ -50,6 +50,10 @@ internal sealed class FakeStubLibrary : IStubLibrary
 
     public void RemoveItem(string mediaPath) => Removed.Add(mediaPath);
 
+    public List<string> ScanRequests { get; } = [];
+
+    public void RequestScanFor(TrackedEntry entry) => ScanRequests.Add(entry.Key);
+
     public bool ExistsOutsideStubs(TrackedEntry entry) => RealItems.Contains(entry.Key);
 }
 
@@ -244,6 +248,23 @@ public sealed class StubSyncTests : IDisposable
         await Tick(tracker, sync);
 
         Assert.True(File.Exists(Path.Combine(_root, "cs-movie-687163", "cs-movie-687163.mp4")));
+    }
+
+    [Fact]
+    public async Task ImportedButNotInJellyfin_AsksJellyfinToScan()
+    {
+        var (tracker, sync) = Start();
+        await Tick(tracker, sync);
+        Assert.DoesNotContain("movie-tmdb687163", _library.ScanRequests);
+
+        // Like Backrooms on 2026-10-01: Radarr finished and imported; the Seerr request is still open.
+        _clients.Radarr.On("/api/v3/queue", () => FixtureHandler.Ok(Fixtures.Text("radarr/queue.json").Replace("\"tmdbId\": 687163", "\"tmdbId\": 1", StringComparison.Ordinal)));
+        _clients.Radarr.On("/api/v3/movie", () => FixtureHandler.Ok("[{\"tmdbId\":687163,\"hasFile\":true,\"isAvailable\":true,\"monitored\":true,\"path\":\"/data/media/movies/Project Hail Mary (2026)\"}]"), "tmdbId=687163");
+        _time.Advance(TimeSpan.FromMinutes(1));
+        await Tick(tracker, sync);
+
+        Assert.Contains("movie-tmdb687163", _library.ScanRequests);
+        Assert.Contains(_log.Messages(), m => m == "[ComingSoon] Update 'Project Hail Mary' (movie-tmdb687163): Importing — almost ready");
     }
 
     [Fact]

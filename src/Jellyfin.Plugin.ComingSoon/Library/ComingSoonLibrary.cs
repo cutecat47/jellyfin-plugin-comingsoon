@@ -43,6 +43,12 @@ public interface IStubLibrary
 
     /// <summary>Whether the real movie / season exists in another library.</summary>
     bool ExistsOutsideStubs(TrackedEntry entry);
+
+    /// <summary>
+    /// Radarr/Sonarr have the files but Jellyfin hasn't picked them up: point Jellyfin at the folder
+    /// (like the *arr "Connect → Jellyfin" notification). Throttled internally.
+    /// </summary>
+    void RequestScanFor(TrackedEntry entry);
 }
 
 /// <summary>Jellyfin implementation of <see cref="IStubLibrary"/>.</summary>
@@ -51,12 +57,19 @@ public sealed class ComingSoonLibrary(
     IProviderManager providerManager,
     IHttpClientFactory httpClientFactory,
     IFileSystem fileSystem,
+    ILibraryMonitor libraryMonitor,
     StubRegistry registry,
     ILogger<ComingSoonLibrary> logger) : IStubLibrary
 {
     private static readonly TimeSpan ExistsCacheTtl = TimeSpan.FromSeconds(60);
 
     private readonly ConcurrentDictionary<string, (bool Exists, DateTimeOffset At)> _existsCache = new(StringComparer.Ordinal);
+    private static readonly TimeSpan ScanRequestInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan FallbackScanInterval = TimeSpan.FromMinutes(15);
+    private const int MaxScanRequests = 6;
+
+    private readonly ConcurrentDictionary<string, (int Attempts, DateTimeOffset At)> _scanRequests = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<CollectionTypeOptions, DateTimeOffset> _fallbackScans = new();
     private Guid _libraryId;
     private string? _root;
     private string? _warnedAbout;
@@ -296,6 +309,75 @@ public sealed class ComingSoonLibrary(
 
         return record with { MetadataApplied = true, AppliedPosterUrl = poster, AppliedBackdropUrl = backdrop };
     }
+
+    public void RequestScanFor(TrackedEntry entry)
+    {
+        var now = DateTimeOffset.UtcNow;
+        if (_scanRequests.TryGetValue(entry.Key, out var previous)
+            && (previous.Attempts >= MaxScanRequests || now - previous.At < ScanRequestInterval))
+        {
+            return;
+        }
+
+        var attempt = previous.Attempts + 1;
+        _scanRequests[entry.Key] = (attempt, now);
+        var app = entry.Kind == MediaKind.Series ? "Sonarr" : "Radarr";
+        var path = entry.ArrPath;
+
+        if (!string.IsNullOrWhiteSpace(path) && (Directory.Exists(path) || File.Exists(path)) && IsInsideALibrary(path))
+        {
+            // Same as Radarr/Sonarr's "Connect → Jellyfin": Jellyfin rescans that folder about a minute later.
+            libraryMonitor.ReportFileSystemChanged(path);
+            logger.LogInformation(
+                "[ComingSoon] {App:l} has '{Name:l}' on disk; asked Jellyfin to scan {Path:l} (attempt {Attempt} of {Max})",
+                app,
+                entry.DisplayName,
+                path,
+                attempt,
+                MaxScanRequests);
+            return;
+        }
+
+        if (attempt == 1)
+        {
+            logger.LogWarning(
+                "[ComingSoon] {App:l} has '{Name:l}' at {Path:l}, but Jellyfin can't see that folder in any of its libraries (different paths in the two containers?). Scanning your {Type:l} libraries instead. To make new downloads appear straight away, add Jellyfin under {App2:l} -> Settings -> Connect",
+                app,
+                entry.DisplayName,
+                string.IsNullOrWhiteSpace(path) ? "(unknown path)" : path,
+                entry.Kind == MediaKind.Series ? "Shows" : "Movies",
+                app);
+        }
+
+        var type = entry.Kind == MediaKind.Series ? CollectionTypeOptions.tvshows : CollectionTypeOptions.movies;
+        if (_fallbackScans.TryGetValue(type, out var last) && now - last < FallbackScanInterval)
+        {
+            return;
+        }
+
+        _fallbackScans[type] = now;
+        foreach (var folder in libraryManager.GetVirtualFolders().Where(f => f.CollectionType == type && !IsStubLibrary(f)))
+        {
+            if (Guid.TryParse(folder.ItemId, out var id))
+            {
+                providerManager.QueueRefresh(id, new MetadataRefreshOptions(new DirectoryService(fileSystem)), RefreshPriority.Normal);
+                logger.LogInformation("[ComingSoon] Queued a scan of library '{Name:l}' so '{Item:l}' shows up", folder.Name, entry.DisplayName);
+            }
+        }
+    }
+
+    private bool IsInsideALibrary(string path)
+    {
+        var full = Normalize(path);
+        return libraryManager.GetVirtualFolders()
+            .Where(f => !IsStubLibrary(f))
+            .SelectMany(f => f.Locations ?? [])
+            .Select(Normalize)
+            .Any(root => full.StartsWith(root + "/", StringComparison.Ordinal) || full.StartsWith(root + "\\", StringComparison.Ordinal));
+    }
+
+    private bool IsStubLibrary(VirtualFolderInfo folder)
+        => (_root ?? registry.Root) is string root && (folder.Locations ?? []).Any(l => string.Equals(Normalize(l), Normalize(root), StringComparison.Ordinal));
 
     public void RemoveItem(string mediaPath)
     {

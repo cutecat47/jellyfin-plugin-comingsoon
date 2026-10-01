@@ -57,6 +57,12 @@ public sealed record TrackedEntry
     /// <summary>Gets how many episodes of the season have aired, per Sonarr (series only; null when unknown).</summary>
     public int? AiredEpisodes { get; init; }
 
+    /// <summary>Gets a value indicating whether Radarr/Sonarr have the file(s) and only Jellyfin still has to pick them up.</summary>
+    public bool OnDisk { get; init; }
+
+    /// <summary>Gets the movie/series folder as Radarr/Sonarr report it (used to point Jellyfin at new files).</summary>
+    public string? ArrPath { get; init; }
+
     /// <summary>
     /// Gets a value indicating whether the entry is requested in Seerr but Radarr/Sonarr won't download it:
     /// the movie/series isn't there any more, or it (or the season) isn't monitored.

@@ -1,6 +1,6 @@
 {
   "category": "General",
-  "changelog": "Fix: plugin updates were hidden in Jellyfin because the package turned automatic updates off. Install this version once from the Catalog; later versions then appear and update normally.",
+  "changelog": "Fix: requested items could sit at Importing until the next scheduled library scan. Once Radarr/Sonarr have imported a title, the plugin asks Jellyfin to scan that folder (falling back to scanning Movies/Shows libraries if Jellyfin cannot see the path), so the real item appears and the placeholder goes away within minutes.",
   "description": "Keeps a shared \"Coming Soon\" library of requested movies and shows that haven't arrived yet, with download progress and ETA in the item overview. Placeholder items are not playable.",
   "guid": "41434daf-8948-4e30-b7b9-cbeb0ff0ea32",
   "name": "Coming Soon",
@@ -8,7 +8,7 @@
   "owner": "cutecat47",
   "targetAbi": "12.1.0.0",
   "timestamp": "2026-10-01T00:00:00.0000000Z",
-  "version": "0.4.6.0",
+  "version": "0.4.7.0",
   "status": "Active",
   "autoUpdate": true,
   "assemblies": []

@@ -177,9 +177,19 @@ public class MergeTests
         var input = new MergeInput
         {
             SeerrRequests = [new SeerrRequest { RequestId = 1, Kind = MediaKind.Movie, TmdbId = 42 }],
-            Movies = new Dictionary<int, MovieReleaseInfo> { [42] = new(true, true, true, null) },
+            Movies = new Dictionary<int, MovieReleaseInfo> { [42] = new(true, true, true, null, true, "/data/media/movies/Backrooms (2026)") },
             Now = Now,
         };
-        Assert.Equal(TrackedStatus.Importing, EntryBuilder.Build(input).Single().Status);
+        var entry = EntryBuilder.Build(input).Single();
+        Assert.Equal(TrackedStatus.Importing, entry.Status);
+        Assert.True(entry.OnDisk);
+        Assert.Equal("/data/media/movies/Backrooms (2026)", entry.ArrPath);
+    }
+
+    [Fact]
+    public void StillDownloading_IsNotOnDisk()
+    {
+        var phm = EntryBuilder.Build(FullInput()).Single(e => e.Key == "movie-tmdb687163");
+        Assert.False(phm.OnDisk);
     }
 }
