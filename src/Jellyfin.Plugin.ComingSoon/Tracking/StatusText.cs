@@ -150,6 +150,23 @@ public static class StatusText
         return text;
     }
 
+    /// <summary>Text and bar fill for the poster overlay.</summary>
+    public static (string Headline, string Subline, double? Progress) PosterLines(DisplayState s)
+    {
+        static string Cap(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
+        double? fill = s.Percent is int p ? p / 100.0 : null;
+        return s.Status switch
+        {
+            TrackedStatus.Downloading => ("Downloading", Cap(EtaPhrase(s.Eta)), fill ?? 0),
+            TrackedStatus.Stalled => ("Stalled", s.Detail ?? "Needs attention", fill),
+            TrackedStatus.Importing => ("Importing", "Almost ready", 1.0),
+            TrackedStatus.Queued => ("Queued", s.Detail is null ? "Waiting to start" : Cap(s.Detail.ToLowerInvariant()), null),
+            TrackedStatus.WaitingForRelease when s.ReleaseDate is { } d => ("Not released yet", "Expected " + d.ToString("d MMM yyyy", CultureInfo.InvariantCulture), null),
+            TrackedStatus.WaitingForRelease => ("Not released yet", "Waiting for a release date", null),
+            _ => ("Searching", s.Detail is null ? "Looking for a release" : Cap(s.Detail), null),
+        };
+    }
+
     /// <summary>A one-line status for the tagline, e.g. "Downloading 60%" or "Waiting for release".</summary>
     public static string Tagline(DisplayState s) => s.Percent is int p && s.Status is TrackedStatus.Downloading or TrackedStatus.Stalled
         ? StatusLabel(s.Status) + " " + p.ToString(CultureInfo.InvariantCulture) + "%"

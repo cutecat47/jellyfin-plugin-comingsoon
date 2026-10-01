@@ -182,6 +182,30 @@ public sealed class StubSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task UpgradeFromOlderStubs_RerendersEachOnce()
+    {
+        var (tracker, sync) = Start();
+        await Tick(tracker, sync);
+
+        // Pretend the stubs were written by an older plugin version.
+        var store = new StubStore(_root, () => Video);
+        foreach (var record in store.LoadAll())
+        {
+            store.Save(record with { SchemaVersion = 1 });
+        }
+
+        _library.Applied.Clear();
+        var (tracker2, sync2) = Start();
+        await Tick(tracker2, sync2);
+        Assert.Equal(11, _library.Applied.Count);
+
+        _library.Applied.Clear();
+        var (tracker3, sync3) = Start();
+        await Tick(tracker3, sync3);
+        Assert.Empty(_library.Applied); // and only once
+    }
+
+    [Fact]
     public async Task NotYetIndexed_RetriedLater_WarnsOnce()
     {
         _library.Indexed = false;

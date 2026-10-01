@@ -13,6 +13,8 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Entities;
+using System.Net.Http;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 
@@ -47,6 +49,7 @@ public interface IStubLibrary
 public sealed class ComingSoonLibrary(
     ILibraryManager libraryManager,
     IProviderManager providerManager,
+    IHttpClientFactory httpClientFactory,
     IFileSystem fileSystem,
     StubRegistry registry,
     ILogger<ComingSoonLibrary> logger) : IStubLibrary
@@ -56,6 +59,60 @@ public sealed class ComingSoonLibrary(
     private readonly ConcurrentDictionary<string, (bool Exists, DateTimeOffset At)> _existsCache = new(StringComparer.Ordinal);
     private Guid _libraryId;
     private string? _warnedAbout;
+    private bool _warnedRenderer;
+
+    /// <summary>The original artwork, kept next to the stub (dot-file: Jellyfin ignores it) so re-renders don't re-download.</summary>
+    public static string PosterSourcePath(string mediaPath) => Path.Combine(Path.GetDirectoryName(mediaPath)!, ".poster-source");
+
+    /// <summary>
+    /// Renders the status overlay onto the poster and saves it as the item's primary image. Falls back to
+    /// the plain artwork if rendering isn't possible. Returns the artwork URL now cached locally.
+    /// </summary>
+    private async Task<string?> SavePosterAsync(BaseItem item, string mediaPath, StubRecord record, DisplayState state, CancellationToken cancellationToken)
+    {
+        var entry = record.Entry;
+        var sourcePath = PosterSourcePath(mediaPath);
+        var cachedUrl = record.AppliedPosterUrl;
+
+        if (!string.IsNullOrEmpty(entry.PosterUrl) && (entry.PosterUrl != cachedUrl || !File.Exists(sourcePath)))
+        {
+            try
+            {
+                using var http = httpClientFactory.CreateClient(NamedClient.Default);
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(TimeSpan.FromSeconds(20));
+                var bytes = await http.GetByteArrayAsync(new Uri(entry.PosterUrl), timeout.Token).ConfigureAwait(false);
+                await File.WriteAllBytesAsync(sourcePath, bytes, cancellationToken).ConfigureAwait(false);
+                cachedUrl = entry.PosterUrl;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or UriFormatException)
+            {
+                logger.LogWarning("[ComingSoon] Couldn't download poster for '{Name:l}': {Error:l}", entry.DisplayName, ex.Message);
+            }
+        }
+
+        byte[]? source = File.Exists(sourcePath) ? await File.ReadAllBytesAsync(sourcePath, cancellationToken).ConfigureAwait(false) : null;
+
+        byte[] rendered;
+        try
+        {
+            rendered = PosterRenderer.Render(source, entry.DisplayName, state);
+        }
+        catch (Exception ex) when (ex is TypeInitializationException or DllNotFoundException or TypeLoadException or FileNotFoundException or FileLoadException or InvalidOperationException)
+        {
+            if (!_warnedRenderer)
+            {
+                logger.LogWarning("[ComingSoon] Can't draw progress onto posters ({Error:l}); using plain artwork instead", ex.Message);
+                _warnedRenderer = true;
+            }
+
+            return await SaveImageAsync(item, entry.PosterUrl, record.AppliedPosterUrl, ImageType.Primary, entry, cancellationToken).ConfigureAwait(false);
+        }
+
+        using var stream = new MemoryStream(rendered);
+        await providerManager.SaveImage(item, stream, "image/jpeg", ImageType.Primary, null, cancellationToken).ConfigureAwait(false);
+        return cachedUrl;
+    }
 
     public async Task<LibraryState> EnsureLibraryAsync(string root, string name, CancellationToken cancellationToken)
     {
@@ -154,7 +211,7 @@ public sealed class ComingSoonLibrary(
         }
 
         var entry = record.Entry;
-        var poster = await SaveImageAsync(item, entry.PosterUrl, record.AppliedPosterUrl, ImageType.Primary, entry, cancellationToken).ConfigureAwait(false);
+        var poster = await SavePosterAsync(item, mediaPath, record, state, cancellationToken).ConfigureAwait(false);
         var backdrop = await SaveImageAsync(item, entry.BackdropUrl, record.AppliedBackdropUrl, ImageType.Backdrop, entry, cancellationToken).ConfigureAwait(false);
 
         StubMetadata.Apply(item, entry, state, record.Overview ?? StatusText.Overview(state));

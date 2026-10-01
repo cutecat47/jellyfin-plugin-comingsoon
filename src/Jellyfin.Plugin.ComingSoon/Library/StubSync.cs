@@ -76,7 +76,7 @@ public sealed class StubSync
         foreach (var record in records)
         {
             _records[record.Entry.Key] = record;
-            if (!record.MetadataApplied)
+            if (!record.MetadataApplied || record.SchemaVersion < StubRecord.CurrentSchema)
             {
                 _pending[record.Entry.Key] = now;
             }
@@ -231,6 +231,7 @@ public sealed class StubSync
                     continue;
                 }
 
+                applied = applied with { SchemaVersion = StubRecord.CurrentSchema };
                 _records[key] = applied;
                 _store.Save(applied);
                 _pending.Remove(key);

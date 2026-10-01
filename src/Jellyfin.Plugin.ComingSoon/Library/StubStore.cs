@@ -11,7 +11,10 @@ namespace Jellyfin.Plugin.ComingSoon.Library;
 /// <summary>What was last written for a stub; stored next to it so restarts pick up where they left off.</summary>
 public sealed record StubRecord
 {
-    public int SchemaVersion { get; init; } = 1;
+    /// <summary>Bump to make every existing stub re-render after an upgrade (2 = posters with progress overlay).</summary>
+    public const int CurrentSchema = 2;
+
+    public int SchemaVersion { get; init; } = CurrentSchema;
 
     public required TrackedEntry Entry { get; init; }
 

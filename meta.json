@@ -1,6 +1,6 @@
 {
   "category": "General",
-  "changelog": "Fix: placeholders never appeared in the Coming Soon library. The plugin now scans the library the same way Jellyfin's own Scan library does (its folder items, not the collection folder, whose scan is a no-op), and rescans every 2 minutes while anything is still waiting to be indexed.",
+  "changelog": "Posters now show progress: status, percentage, a progress bar and a detail line drawn onto each placeholder poster (title card when there is no artwork), redrawn as the status changes. Existing placeholders are redrawn once after updating.",
   "description": "Keeps a shared \"Coming Soon\" library of requested movies and shows that haven't arrived yet, with download progress and ETA in the item overview. Placeholder items are not playable.",
   "guid": "41434daf-8948-4e30-b7b9-cbeb0ff0ea32",
   "name": "Coming Soon",
@@ -8,7 +8,7 @@
   "owner": "cutecat47",
   "targetAbi": "12.1.0.0",
   "timestamp": "2026-10-01T00:00:00.0000000Z",
-  "version": "0.3.1.0",
+  "version": "0.4.0.0",
   "status": "Active",
   "autoUpdate": false,
   "assemblies": []

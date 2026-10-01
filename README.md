@@ -98,6 +98,33 @@ would wrongly mark requests as available. Optionally, also untick the Coming Soo
 - **Not included**: a native progress bar on stubs (setting a playback position). Jellyfin has no way
   to keep one library out of Continue Watching, so it can't meet that requirement.
 
+## Posters with progress
+
+Each placeholder's poster has the status drawn onto it — a *COMING SOON* badge, the status in its
+colour, the percentage, a progress bar and a detail line ("A few hours left", "Expected 5 Mar 2027",
+"Looking for a release", a stall reason…). Items without artwork get a title card instead. Posters are
+redrawn whenever the visible status changes (at most once a minute per item), so the poster grid in
+**every** client shows progress without opening anything.
+
+Drawing uses the SkiaSharp library Jellyfin already ships and the bundled Lato font
+(SIL Open Font License, `Resources/Fonts/OFL.txt`). If drawing ever fails, the plain poster is used
+and the log says so once.
+
+## A "Currently Downloading" row on the home screen
+
+Jellyfin clients build their own home screens, so a plugin can't add a brand-new row type that works
+in the official apps. But every library automatically gets a **Recently Added** row on the home screen,
+and for this library that row *is* a "currently downloading" row — newest request first, with the
+progress posters. To make it look like a dedicated row rather than a collection:
+
+1. **Rename the library** (Dashboard → Libraries → ⋮ → Rename) to e.g. **Currently Downloading**.
+   The plugin finds it by folder, so renaming is safe. The row then reads
+   *Recently Added in Currently Downloading* (wording varies by app).
+2. **Hide the library tile** for each user: Settings → Home → *My Media* — untick the library under
+   "Exclude from My Media" equivalents (the option is per user and per client).
+3. **Move the row up**: in each client's Home settings, put *Recently Added Media* above other
+   sections.
+
 ## Manual test checklist
 
 Turn on **Verbose logging** while testing. Useful log command (linuxserver image):
