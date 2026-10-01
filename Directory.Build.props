@@ -8,6 +8,6 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <JellyfinVersion>12.1.0</JellyfinVersion>
-    <Version>0.4.4.0</Version>
+    <Version>0.4.5.0</Version>
   </PropertyGroup>
 </Project>

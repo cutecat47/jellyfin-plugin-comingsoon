@@ -40,7 +40,8 @@ Dashboard → Plugins → **Coming Soon**:
 | Poll interval | 5 s | Radarr/Sonarr queues. Seerr is polled at most every 30 s (each Seerr request list call fans out to every *arr server). |
 | Stub folder path | `/config/coming-soon` | Inside the container. Created automatically. Don't put anything else in it. |
 | Library name | `Coming Soon` | Used only when the plugin creates the library. You can rename the library later; it's found by folder. |
-| Progress step | 5 % | Item metadata is rewritten only when the displayed status changes (bucket, progress crossing a step, ETA bucket) and at most once a minute per item. |
+| Progress step | 5 % | Item metadata and posters are rewritten only when the displayed status changes (bucket, progress crossing a step, ETA bucket). Set 1 for the finest updates. |
+| Minimum seconds between updates | 60 | Per item, 10-3600. Lower (e.g. 15) for livelier progress: each update redraws two small images and saves one database record. Apps pick up changes when they reload (Moonfin: Home button, pull to refresh, reopening). |
 | Verbose logging | off | Logs every raw queue record (when it changes) and poll summaries — turn on when reporting a problem. |
 
 Then press **Test connections** — it calls each service *from the Jellyfin server* and reports the

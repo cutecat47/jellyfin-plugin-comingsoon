@@ -5,7 +5,7 @@ namespace Jellyfin.Plugin.ComingSoon.Tracking;
 
 /// <summary>
 /// Decides when an item's metadata should be rewritten: only when what the user sees changes,
-/// and at most once per <see cref="MinInterval"/> per item. A change held back by the interval
+/// and at most once per interval per item (default <see cref="MinInterval"/>). A change held back by the interval
 /// is pushed on a later poll (the comparison is always against what was last pushed).
 /// </summary>
 public sealed class UpdateThrottle
@@ -14,14 +14,16 @@ public sealed class UpdateThrottle
 
     private readonly Dictionary<string, (DisplayState State, DateTimeOffset At)> _pushed = new(StringComparer.Ordinal);
 
-    public bool ShouldPush(string key, DisplayState state, DateTimeOffset now)
+    public bool ShouldPush(string key, DisplayState state, DateTimeOffset now) => ShouldPush(key, state, now, MinInterval);
+
+    public bool ShouldPush(string key, DisplayState state, DateTimeOffset now, TimeSpan minInterval)
     {
         if (!_pushed.TryGetValue(key, out var last))
         {
             return true;
         }
 
-        return last.State != state && now - last.At >= MinInterval;
+        return last.State != state && now - last.At >= minInterval;
     }
 
     public void MarkPushed(string key, DisplayState state, DateTimeOffset now) => _pushed[key] = (state, now);

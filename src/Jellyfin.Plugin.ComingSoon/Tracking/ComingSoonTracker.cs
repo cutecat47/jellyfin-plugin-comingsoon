@@ -286,7 +286,7 @@ public sealed class ComingSoonTracker
         foreach (var entry in current.Values)
         {
             var state = StatusText.ToDisplayState(entry, config.PercentStep, now, zone);
-            if (!_throttle.ShouldPush(entry.Key, state, now))
+            if (!_throttle.ShouldPush(entry.Key, state, now, TimeSpan.FromSeconds(Math.Clamp(config.MinUpdateIntervalSeconds, 10, 3600))))
             {
                 continue;
             }

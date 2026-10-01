@@ -58,7 +58,11 @@
                     </div>
                     <div class="inputContainer">
                         <input is="emby-input" type="number" id="PercentStep" min="1" max="100" label="Progress step for updates (%)" />
-                        <div class="fieldDescription">Item metadata is only rewritten when progress crosses this step (and at most once per minute per item).</div>
+                        <div class="fieldDescription">Item metadata and posters are only rewritten when the shown status changes, e.g. progress crossing this step. 1 gives the finest updates.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="number" id="MinUpdateIntervalSeconds" min="10" max="3600" label="Minimum seconds between updates of one item" />
+                        <div class="fieldDescription">Default 60. Lower (e.g. 15) for livelier progress; each update redraws two small images and saves one database record. Apps show the new state when they reload (Home button, pull to refresh, reopening).</div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label class="emby-checkbox-label">
@@ -79,7 +83,7 @@
             (function () {
                 var pluginId = '41434daf-8948-4e30-b7b9-cbeb0ff0ea32';
                 var textFields = ['SeerrUrl', 'SeerrApiKey', 'SonarrUrl', 'SonarrApiKey', 'RadarrUrl', 'RadarrApiKey', 'StubFolderPath', 'LibraryName', 'LibraryCreatedFor'];
-                var numberFields = ['PollIntervalSeconds', 'PercentStep'];
+                var numberFields = ['PollIntervalSeconds', 'PercentStep', 'MinUpdateIntervalSeconds'];
                 var boolFields = ['VerboseLogging'];
                 var page = document.querySelector('#ComingSoonConfigPage');
 

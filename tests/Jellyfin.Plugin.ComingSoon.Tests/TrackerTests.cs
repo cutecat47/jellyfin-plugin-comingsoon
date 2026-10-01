@@ -193,6 +193,26 @@ public class TrackerTests
     }
 
     [Fact]
+    public async Task ShorterUpdateInterval_PushesSooner()
+    {
+        var config = Config();
+        config.MinUpdateIntervalSeconds = 15;
+        config.PercentStep = 1;
+        var tracker = NewTracker();
+        await tracker.PollAsync(config, null, TestContext.Current.CancellationToken);
+
+        // 62% -> 63% done.
+        _clients.Radarr.On("/api/v3/queue", () => FixtureHandler.Ok(Fixtures.Text("radarr/queue.json").Replace("3264175145", "3178275799", StringComparison.Ordinal)));
+        _time.Advance(TimeSpan.FromSeconds(10));
+        var early = await tracker.PollAsync(config, null, TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(early.Updates, u => u.Entry.Key == "movie-tmdb687163");
+
+        _time.Advance(TimeSpan.FromSeconds(5));
+        var later = await tracker.PollAsync(config, null, TestContext.Current.CancellationToken);
+        Assert.Equal("Downloading — 63% — a few hours left", Assert.Single(later.Updates, u => u.Entry.Key == "movie-tmdb687163").Overview);
+    }
+
+    [Fact]
     public async Task OnlyRadarrConfigured_Works()
     {
         var config = new PluginConfiguration { RadarrUrl = "http://radarr:7878", RadarrApiKey = "k" };

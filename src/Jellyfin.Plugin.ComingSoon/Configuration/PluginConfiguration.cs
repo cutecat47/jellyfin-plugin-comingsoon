@@ -28,6 +28,9 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets the progress step (in percent) that triggers a metadata update.</summary>
     public int PercentStep { get; set; } = 5;
 
+    /// <summary>Gets or sets the minimum seconds between metadata/poster rewrites of one item (10-3600).</summary>
+    public int MinUpdateIntervalSeconds { get; set; } = 60;
+
     public bool VerboseLogging { get; set; }
 
     /// <summary>Gets or sets the name used when the plugin creates the library (an existing library on the stub folder is used as-is).</summary>
