@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.4.0.0",
+        "changelog": "Posters now show progress: status, percentage, a progress bar and a detail line drawn onto each placeholder poster (title card when there is no artwork), redrawn as the status changes. Existing placeholders are redrawn once after updating.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/cutecat47/jellyfin-plugin-comingsoon/releases/download/v0.4.0.0/comingsoon_0.4.0.0.zip",
+        "checksum": "48c7455a6fea3690b08dd89081e9374b",
+        "timestamp": "2026-10-01T10:48:04.0000000Z"
+      },
+      {
         "version": "0.3.1.0",
         "changelog": "Fix: placeholders never appeared in the Coming Soon library. The plugin now scans the library the same way Jellyfin's own Scan library does (its folder items, not the collection folder, whose scan is a no-op), and rescans every 2 minutes while anything is still waiting to be indexed.",
         "targetAbi": "12.1.0.0",
