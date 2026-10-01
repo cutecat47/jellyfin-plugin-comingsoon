@@ -54,6 +54,9 @@ public sealed record TrackedEntry
 
     public string? BackdropUrl { get; init; }
 
+    /// <summary>Gets how many episodes of the season have aired, per Sonarr (series only; null when unknown).</summary>
+    public int? AiredEpisodes { get; init; }
+
     /// <summary>Gets a value indicating whether the entry is in the Radarr/Sonarr queue.</summary>
     public bool InQueue { get; init; }
 

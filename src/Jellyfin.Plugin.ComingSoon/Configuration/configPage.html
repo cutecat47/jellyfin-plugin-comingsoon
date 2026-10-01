@@ -46,7 +46,11 @@
                     </div>
                     <div class="inputContainer">
                         <input is="emby-input" type="text" id="StubFolderPath" label="Stub folder path" />
-                        <div class="fieldDescription">Point a library named "Coming Soon" at this folder.</div>
+                        <div class="fieldDescription">Path inside the Jellyfin container. The plugin creates this folder and a Movies-type library on it, with internet metadata turned off. Don't put anything else in this folder.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="text" id="LibraryName" label="Library name" />
+                        <div class="fieldDescription">Only used when the plugin creates the library. Rename it in Jellyfin any time; the plugin finds it by folder.</div>
                     </div>
                     <div class="inputContainer">
                         <input is="emby-input" type="number" id="PercentStep" min="1" max="100" label="Progress step for updates (%)" />
@@ -56,12 +60,6 @@
                         <label class="emby-checkbox-label">
                             <input id="VerboseLogging" type="checkbox" is="emby-checkbox" />
                             <span>Verbose logging</span>
-                        </label>
-                    </div>
-                    <div class="checkboxContainer checkboxContainer-withDescription">
-                        <label class="emby-checkbox-label">
-                            <input id="ShowNativeProgressBar" type="checkbox" is="emby-checkbox" />
-                            <span>Show native progress bar on stubs (experimental)</span>
                         </label>
                     </div>
 
@@ -76,9 +74,9 @@
         <script type="text/javascript">
             (function () {
                 var pluginId = '41434daf-8948-4e30-b7b9-cbeb0ff0ea32';
-                var textFields = ['SeerrUrl', 'SeerrApiKey', 'SonarrUrl', 'SonarrApiKey', 'RadarrUrl', 'RadarrApiKey', 'StubFolderPath'];
+                var textFields = ['SeerrUrl', 'SeerrApiKey', 'SonarrUrl', 'SonarrApiKey', 'RadarrUrl', 'RadarrApiKey', 'StubFolderPath', 'LibraryName'];
                 var numberFields = ['PollIntervalSeconds', 'PercentStep'];
-                var boolFields = ['VerboseLogging', 'ShowNativeProgressBar'];
+                var boolFields = ['VerboseLogging'];
                 var page = document.querySelector('#ComingSoonConfigPage');
 
                 function el(id) { return page.querySelector('#' + id); }

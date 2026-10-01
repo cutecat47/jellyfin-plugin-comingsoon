@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.ComingSoon.Clients;
 using Jellyfin.Plugin.ComingSoon.Configuration;
+using Jellyfin.Plugin.ComingSoon.Library;
 using Jellyfin.Plugin.ComingSoon.Tracking;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,24 +11,39 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.ComingSoon.Services;
 
 /// <summary>
-/// Background poller: runs the tracker at the configured interval.
-/// This build only tracks and logs; writing stubs into the library comes next.
+/// Background poller: tracker (Radarr/Sonarr/Seerr) -> stub sync (folder, library items, metadata).
 /// </summary>
 public class ComingSoonHostedService : BackgroundService
 {
     private readonly ILogger<ComingSoonHostedService> _logger;
     private readonly ComingSoonTracker _tracker;
+    private readonly StubSync _sync;
 
-    public ComingSoonHostedService(IServiceClientFactory clients, ILogger<ComingSoonHostedService> logger)
+    public ComingSoonHostedService(
+        IServiceClientFactory clients,
+        IStubLibrary library,
+        StubRegistry registry,
+        ILogger<ComingSoonHostedService> logger)
     {
         _logger = logger;
         _tracker = new ComingSoonTracker(clients, logger, TimeProvider.System);
+        _sync = new StubSync(library, registry, logger, TimeProvider.System);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("[ComingSoon] Poller started");
         var warnedUnconfigured = false;
+
+        // Let Jellyfin finish starting up (library manager, plugins) before touching the library.
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
 
         try
         {
@@ -49,7 +65,7 @@ public class ComingSoonHostedService : BackgroundService
                     warnedUnconfigured = false;
                     try
                     {
-                        await _tracker.PollAsync(config, null, stoppingToken).ConfigureAwait(false);
+                        await TickAsync(config, stoppingToken).ConfigureAwait(false);
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
                     {
@@ -71,4 +87,17 @@ public class ComingSoonHostedService : BackgroundService
 
     private static bool IsUnconfigured(PluginConfiguration c)
         => string.IsNullOrWhiteSpace(c.SeerrUrl) && string.IsNullOrWhiteSpace(c.SonarrUrl) && string.IsNullOrWhiteSpace(c.RadarrUrl);
+
+    private async Task TickAsync(PluginConfiguration config, CancellationToken cancellationToken)
+    {
+        if (!_sync.IsInitializedFor(config.StubFolderPath))
+        {
+            var seeds = _sync.Initialize(config);
+            _tracker.Seed(seeds, TimeProvider.System.LocalTimeZone, config.PercentStep);
+        }
+
+        await _sync.EnsureLibraryAsync(config, cancellationToken).ConfigureAwait(false);
+        var snapshot = await _tracker.PollAsync(config, _sync.ExistsOutsideStubs, cancellationToken).ConfigureAwait(false);
+        await _sync.ApplyAsync(snapshot, config, cancellationToken).ConfigureAwait(false);
+    }
 }

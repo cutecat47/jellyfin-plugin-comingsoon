@@ -14,7 +14,7 @@ public class SkeletonTests
         Assert.Equal("/config/coming-soon", config.StubFolderPath);
         Assert.Equal(5, config.PercentStep);
         Assert.False(config.VerboseLogging);
-        Assert.False(config.ShowNativeProgressBar);
+        Assert.Equal("Coming Soon", config.LibraryName);
     }
 
     [Fact]

@@ -30,9 +30,6 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public bool VerboseLogging { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether stubs get a playback position so clients draw a progress bar.
-    /// Off by default; see README for the Continue Watching caveats.
-    /// </summary>
-    public bool ShowNativeProgressBar { get; set; }
+    /// <summary>Gets or sets the name used when the plugin creates the library (an existing library on the stub folder is used as-is).</summary>
+    public string LibraryName { get; set; } = "Coming Soon";
 }

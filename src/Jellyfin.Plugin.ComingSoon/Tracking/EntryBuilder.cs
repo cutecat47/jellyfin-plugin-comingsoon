@@ -80,6 +80,10 @@ public static class EntryBuilder
         }
 
         return entries.Values
+            .Select(e => e.Kind == MediaKind.Series && e.TvdbId is int tvdb && e.SeasonNumber is int season
+                && input.Series.TryGetValue(tvdb, out var info) && info.Seasons.TryGetValue(season, out var stats)
+                    ? e with { AiredEpisodes = stats.EpisodeCount }
+                    : e)
             .OrderByDescending(e => e.RequestedAt ?? DateTimeOffset.MinValue)
             .ThenBy(e => e.Key, StringComparer.Ordinal)
             .ToList();

@@ -27,6 +27,7 @@
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
     <EmbeddedResource Include="Configuration\configPage.html" />
+    <EmbeddedResource Include="Resources\stub.mp4" LogicalName="Jellyfin.Plugin.ComingSoon.Resources.stub.mp4" />
   </ItemGroup>
 
   <ItemGroup>

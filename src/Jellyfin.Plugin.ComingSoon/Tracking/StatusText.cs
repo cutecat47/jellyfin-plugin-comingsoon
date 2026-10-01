@@ -150,6 +150,11 @@ public static class StatusText
         return text;
     }
 
+    /// <summary>A one-line status for the tagline, e.g. "Downloading 60%" or "Waiting for release".</summary>
+    public static string Tagline(DisplayState s) => s.Percent is int p && s.Status is TrackedStatus.Downloading or TrackedStatus.Stalled
+        ? StatusLabel(s.Status) + " " + p.ToString(CultureInfo.InvariantCulture) + "%"
+        : StatusLabel(s.Status);
+
     /// <summary>The short message shown when someone presses play, e.g. "Still downloading — a few hours left".</summary>
     public static string PlaybackMessage(DisplayState s) => s.Status switch
     {
