@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.4.4.0",
+        "changelog": "A requested movie or season that was removed from Radarr/Sonarr, or is unmonitored there, is no longer shown as Searching forever: its placeholder is removed after 10 minutes (only while all services are reachable). Requests that never reached Radarr/Sonarr are not shown.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/cutecat47/jellyfin-plugin-comingsoon/releases/download/v0.4.4.0/comingsoon_0.4.4.0.zip",
+        "checksum": "bd7ef7187a262853141c54adc2127012",
+        "timestamp": "2026-10-01T11:19:19.0000000Z"
+      },
+      {
         "version": "0.4.3.0",
         "changelog": "Fix: after renaming the Coming Soon library, the old name could linger as a phantom library in apps (e.g. Moonfin). The plugin now looks the library up by folder before every scan and never refreshes an entry whose folder no longer exists. Run Scan All Libraries once to remove an existing phantom.",
         "targetAbi": "12.1.0.0",
