@@ -18,6 +18,7 @@ public sealed class StubSync
 {
     private static readonly TimeSpan LibraryRecheck = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan PendingWarnAfter = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan PendingRescanAfter = TimeSpan.FromMinutes(2);
 
     private readonly IStubLibrary _library;
     private readonly StubRegistry _registry;
@@ -32,6 +33,7 @@ public sealed class StubSync
     private StubStore? _store;
     private bool _libraryReady;
     private DateTimeOffset _libraryCheckedAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastScanAt = DateTimeOffset.MinValue;
 
     public StubSync(IStubLibrary library, StubRegistry registry, ILogger logger, TimeProvider time, Func<byte[]>? video = null)
     {
@@ -199,8 +201,11 @@ public sealed class StubSync
             return;
         }
 
-        if (structureChanged)
+        // Rescan when stubs were added/removed, or periodically while some still aren't indexed.
+        var stuck = _pending.Values.Any(since => now - since >= PendingRescanAfter);
+        if (structureChanged || (stuck && now - _lastScanAt >= PendingRescanAfter))
         {
+            _lastScanAt = now;
             await _library.ScanAsync(cancellationToken).ConfigureAwait(false);
         }
 

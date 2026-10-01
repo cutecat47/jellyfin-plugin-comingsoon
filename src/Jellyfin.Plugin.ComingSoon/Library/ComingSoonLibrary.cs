@@ -90,16 +90,59 @@ public sealed class ComingSoonLibrary(
         return _libraryId == Guid.Empty ? LibraryState.Unavailable : created ? LibraryState.Created : LibraryState.Existing;
     }
 
+    /// <summary>
+    /// Scans only the Coming Soon library. Mirrors Jellyfin's own per-library "Scan library"
+    /// (ProviderManager.RefreshCollectionFolderChildren): a CollectionFolder's ValidateChildren is a
+    /// deliberate no-op, the items live under its physical folder(s), so those are what get validated.
+    /// </summary>
     public async Task ScanAsync(CancellationToken cancellationToken)
     {
-        if (libraryManager.GetItemById(_libraryId) is not Folder library)
+        if (libraryManager.GetItemById(_libraryId) is not CollectionFolder library)
         {
             logger.LogWarning("[ComingSoon] Coming Soon library not found; skipping scan");
             return;
         }
 
         var options = new MetadataRefreshOptions(new DirectoryService(fileSystem));
-        await library.ValidateChildren(new Progress<double>(), options, recursive: true, allowRemoveRoot: false, cancellationToken).ConfigureAwait(false);
+
+        // Refreshing the collection folder also re-links its physical folders (PhysicalFolderIds).
+        await library.RefreshMetadata(options, cancellationToken).ConfigureAwait(false);
+        var physical = library.GetPhysicalFolders().ToList();
+
+        if (physical.Count == 0)
+        {
+            // Brand-new library: make sure the top-level folder items exist, then link again.
+            await libraryManager.ValidateTopLibraryFolders(cancellationToken).ConfigureAwait(false);
+            await library.RefreshMetadata(options, cancellationToken).ConfigureAwait(false);
+            physical = library.GetPhysicalFolders().ToList();
+        }
+
+        if (physical.Count == 0)
+        {
+            physical = library.PhysicalLocations
+                .Select(path => libraryManager.FindByPath(path, isFolder: true))
+                .OfType<Folder>()
+                .ToList();
+        }
+
+        if (physical.Count == 0)
+        {
+            logger.LogWarning("[ComingSoon] Library '{Name:l}' has no folder items yet; queueing a full library scan", library.Name);
+            libraryManager.QueueLibraryScan();
+            return;
+        }
+
+        foreach (var folder in physical)
+        {
+            await folder.RefreshMetadata(options, cancellationToken).ConfigureAwait(false);
+            await folder.ValidateChildren(new Progress<double>(), options, recursive: true, allowRemoveRoot: false, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (Plugin.Instance?.Configuration.VerboseLogging == true)
+        {
+            var count = physical.Sum(f => f.Children.Count());
+            logger.LogInformation("[ComingSoon] Scanned {Folders} folder(s) of library '{Name:l}': {Count} items", physical.Count, library.Name, count);
+        }
     }
 
     public async Task<StubRecord?> ApplyAsync(string mediaPath, StubRecord record, DisplayState state, CancellationToken cancellationToken)

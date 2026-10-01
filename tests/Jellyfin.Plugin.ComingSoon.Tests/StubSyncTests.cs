@@ -196,6 +196,7 @@ public sealed class StubSyncTests : IDisposable
         }
 
         Assert.Equal(11, _log.Messages(LogLevel.Warning).Count(m => m.Contains("still isn't in the library", StringComparison.Ordinal)));
+        Assert.True(_library.Scans >= 3); // keeps rescanning (every 2 min) while items aren't indexed
 
         _library.Indexed = true;
         _time.Advance(TimeSpan.FromSeconds(5));

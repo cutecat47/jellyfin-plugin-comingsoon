@@ -1,6 +1,6 @@
 {
   "category": "General",
-  "changelog": "Library phase: creates the Coming Soon library and one placeholder per movie/season with poster, status, progress and ETA (locked metadata, newest first). Playback of placeholders is refused (PlaybackInfo) with a Stop + message fallback; watch state cleared. Stubs removed when the real item arrives. Restart-safe.",
+  "changelog": "Fix: placeholders never appeared in the Coming Soon library. The plugin now scans the library the same way Jellyfin's own Scan library does (its folder items, not the collection folder, whose scan is a no-op), and rescans every 2 minutes while anything is still waiting to be indexed.",
   "description": "Keeps a shared \"Coming Soon\" library of requested movies and shows that haven't arrived yet, with download progress and ETA in the item overview. Placeholder items are not playable.",
   "guid": "41434daf-8948-4e30-b7b9-cbeb0ff0ea32",
   "name": "Coming Soon",
@@ -8,7 +8,7 @@
   "owner": "cutecat47",
   "targetAbi": "12.1.0.0",
   "timestamp": "2026-10-01T00:00:00.0000000Z",
-  "version": "0.3.0.0",
+  "version": "0.3.1.0",
   "status": "Active",
   "autoUpdate": false,
   "assemblies": []
