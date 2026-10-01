@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.4.6.0",
+        "changelog": "Fix: plugin updates were hidden in Jellyfin because the package turned automatic updates off. Install this version once from the Catalog; later versions then appear and update normally.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/cutecat47/jellyfin-plugin-comingsoon/releases/download/v0.4.6.0/comingsoon_0.4.6.0.zip",
+        "checksum": "3683f29220975e471fc4bd0c0a3e1a2c",
+        "timestamp": "2026-10-01T11:26:03.0000000Z"
+      },
+      {
         "version": "0.4.5.0",
         "changelog": "New setting: minimum seconds between updates of one item (default 60, down to 10). Combine with a 1% progress step for livelier progress on posters and overviews.",
         "targetAbi": "12.1.0.0",
