@@ -58,6 +58,7 @@ public sealed class ComingSoonLibrary(
 
     private readonly ConcurrentDictionary<string, (bool Exists, DateTimeOffset At)> _existsCache = new(StringComparer.Ordinal);
     private Guid _libraryId;
+    private string? _root;
     private string? _warnedAbout;
     private bool _warnedRenderer;
 
@@ -205,6 +206,7 @@ public sealed class ComingSoonLibrary(
             }
         }
 
+        _root = root;
         _libraryId = Guid.TryParse(folder.ItemId, out var id) ? id : Guid.Empty;
         EnableNfoReader(folder);
         WarnAboutSettings(folder);
@@ -218,7 +220,17 @@ public sealed class ComingSoonLibrary(
     /// </summary>
     public async Task ScanAsync(CancellationToken cancellationToken)
     {
-        if (libraryManager.GetItemById(_libraryId) is not CollectionFolder library)
+        // Look the library up by folder every time: renaming a library gives it a new item id, and refreshing
+        // the old (orphaned) item would save it back into the database as a phantom library.
+        var current = _root is null ? null : FindVirtualFolders(_root).FirstOrDefault();
+        if (current is not null && Guid.TryParse(current.ItemId, out var currentId))
+        {
+            _libraryId = currentId;
+        }
+
+        if (current is null
+            || libraryManager.GetItemById(_libraryId) is not CollectionFolder library
+            || !Directory.Exists(library.Path))
         {
             logger.LogWarning("[ComingSoon] Coming Soon library not found; skipping scan");
             return;
